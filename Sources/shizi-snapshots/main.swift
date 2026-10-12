@@ -1,6 +1,7 @@
 // 开发用：把拾字的各个界面画成图片，改了界面拿来看一眼。
-// 用法：shizi-snapshots <输出文件夹> <测试图文件夹>
+// 用法：shizi-snapshots <输出文件夹> <测试图文件夹> [-AppleLanguages '(en)']
 //   测试图文件夹里要有 receipt.png、table.png（一张小票、一张表格），和 short.pdf、long.pdf 两个多页 PDF。
+//   界面语言照系统的语言顺序；出英文截图在后面加 -AppleLanguages '(en)'，中文加 -AppleLanguages '(zh-Hans)'。
 // 界面放进一个真的窗口，浅色、深色各拍一张；窗口放在屏幕外拍，不打扰人（光挪出去不够，系统会拉回来，见 OffscreenWindow）。
 import AppKit
 import OCRCore
@@ -11,6 +12,15 @@ let args = CommandLine.arguments
 let out = URL(fileURLWithPath: args.count > 1 ? args[1] : "snapshots", isDirectory: true)
 let fixtures = URL(fileURLWithPath: args.count > 2 ? args[2] : ".", isDirectory: true)
 try? FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
+// 界面的语言包（scripts/app/*.lproj）复制到这个程序旁边：Bundle.main 照它们按语言取字，跟 App 里放在 Contents/Resources 一样。
+// 要赶在头一次取字之前，取过一次 Bundle.main 就记住有哪几种语言了。
+let languagePacks = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+	.deletingLastPathComponent().appendingPathComponent("scripts/app", isDirectory: true)
+for pack in ["en.lproj", "zh-Hans.lproj", "zh-Hant.lproj"] {
+	let to = Bundle.main.bundleURL.appendingPathComponent(pack, isDirectory: true)
+	try? FileManager.default.removeItem(at: to)
+	try? FileManager.default.copyItem(at: languagePacks.appendingPathComponent(pack, isDirectory: true), to: to)
+}
 let app = NSApplication.shared
 app.setActivationPolicy(.prohibited)
 

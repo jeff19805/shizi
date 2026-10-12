@@ -54,7 +54,7 @@ enum ClassifySettings {
 
 extension PhotosModel {
 	/// 没认出字的照片按字分不了，筛选条上单独一项。
-	public static let noText = "没有字"
+	public static let noText = String(localized: "没有字")
 
 	/// 分类用哪个插件：配置里开着、接了「分类」的第一个。
 	public var classifyPlugin: PluginConfig? { recognizer.engine.host.plugins(for: "classify").first }
@@ -111,7 +111,7 @@ extension PhotosModel {
 	public func classify(_ rules: ClassifyRules, source: String) {
 		guard classifyRun == nil, let index else { return }
 		guard let plugin = classifyPlugin else {
-			problem = "还没有能分类的判定插件：在「设置 › 判定插件」里改一个插件，打开「分类照片」。"
+			problem = String(localized: "还没有能分类的判定插件：在「设置 › 判定插件」里改一个插件，打开「分类照片」。")
 			return
 		}
 		ClassifySettings.save(rules, source: source, defaults)
@@ -150,11 +150,11 @@ extension PhotosModel {
 			onFinish: { [weak self] gaveUp in
 				guard let self, self.classifyStop === flag else { return }
 				if let run = self.classifyRun, run.failed > 0 {
-					let reason = run.lastProblem ?? "插件没说原因"
+					let reason = run.lastProblem ?? String(localized: "插件没说原因")
 					self.problem =
 						gaveUp
-						? "连着 \(ClassifyBatch.failureLimit) 张没分成，先停了：\(reason)"
-						: "有 \(run.failed) 张没分成，下次分类时再问：\(reason)"
+						? String(localized: "连着 \(ClassifyBatch.failureLimit) 张没分成，先停了：\(reason)")
+						: String(localized: "有 \(run.failed) 张没分成，下次分类时再问：\(reason)")
 				}
 				self.classifyRun = nil
 				self.classifyStop = nil
@@ -241,7 +241,8 @@ final class ClassifyBatch: @unchecked Sendable {
 			case .image(let image):
 				scores = Classifier.classify(image: image, longSide: pixels, rules: rules, host: host, plugin: plugin)
 			case .inCloud, .timedOut, .failed:
-				return (.failure(PluginFailure(plugin: "照片图库", message: "本机取不到这张的预览图")), false)
+				let failure = PluginFailure(plugin: String(localized: "照片图库"), message: String(localized: "本机取不到这张的预览图"))
+				return (.failure(failure), false)
 			}
 		}
 		return (scores.map { PhotoIndex.Scores(source: work.source, scores: $0) }, true)

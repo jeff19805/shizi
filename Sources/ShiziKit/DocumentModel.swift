@@ -292,8 +292,8 @@ public final class DocumentModel: Identifiable {
 		public var title: String {
 			switch self {
 			case .markdown: return "Markdown…"
-			case .text: return "纯文字…"
-			case .json: return "JSON（带每行位置）…"
+			case .text: return String(localized: "纯文字…")
+			case .json: return String(localized: "JSON（带每行位置）…")
 			}
 		}
 

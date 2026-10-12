@@ -1,0 +1,4 @@
+"CFBundleDisplayName" = "拾字";
+"CFBundleName" = "拾字";
+"NSPhotoLibraryUsageDescription" = "拾字读照片图库里的照片，认出上面的字，好按字找照片。认出的字只存在这台 Mac 上，照片不复制、不上传。";
+"Images and PDFs" = "图片和 PDF";

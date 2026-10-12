@@ -47,7 +47,8 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN/Shizi" "$BIN/shizi-mcp" "$BIN/ocr-plugin-systemone" "$APP/Contents/MacOS/"
 sed "s/__VERSION__/$VERSION/g" scripts/app/Info.plist > "$APP/Contents/Info.plist"
-cp -R scripts/app/zh-Hans.lproj "$APP/Contents/Resources/"
+# 界面的语言包：英文对照表（en.lproj/Localizable.strings）、简体和繁体中文，还有各语言的 App 名、照片权限的说明。
+cp -R scripts/app/*.lproj "$APP/Contents/Resources/"
 # 图标用代码画（scripts/app/make-icon.swift），画一次存在 .build 里，脚本改了再重画。
 ICON=.build/app/Shizi.icns
 if [ ! -f "$ICON" ] || [ scripts/app/make-icon.swift -nt "$ICON" ]; then

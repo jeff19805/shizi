@@ -1,0 +1,4 @@
+"CFBundleDisplayName" = "Shizi";
+"CFBundleName" = "Shizi";
+"NSPhotoLibraryUsageDescription" = "Shizi reads the photos in your Photos library and recognizes the text in them, so you can find photos by their text. The text stays on this Mac; photos are never copied or uploaded.";
+"Images and PDFs" = "Images and PDFs";

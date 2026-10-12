@@ -38,7 +38,7 @@ struct TextPane: View {
 		} else if doc.isRunning {
 			VStack(spacing: 8) {
 				ProgressView().controlSize(.small)
-				Text(working == n ? "正在识别这一页" : "还没认到这一页，正在认第 \(working) 页")
+				Text(working == n ? String(localized: "正在识别这一页") : String(localized: "还没认到这一页，正在认第 \(working) 页"))
 					.font(.callout)
 					.foregroundStyle(.secondary)
 			}
@@ -91,7 +91,7 @@ struct LineList: View {
 	@Bindable var doc: DocumentModel
 	let lines: [OCRLine]
 	/// 判定插件复核过的行和插件名。
-	var review: (lines: [Int: Double], name: String) = ([:], "判定插件")
+	var review: (lines: [Int: Double], name: String) = ([:], String(localized: "判定插件"))
 
 	var body: some View {
 		ScrollViewReader { proxy in
@@ -150,9 +150,13 @@ struct LineRow: View {
 
 	func reason(_ s: Suspect) -> String {
 		switch s.reason {
-		case .lowConfidence: return "系统没把握"
-		case .plugin: return "\(reviewer ?? "判定插件") 认为认错了（约 \(Int((s.probability ?? 0) * 100))%）"
-		case .documentOnly: return "多半是公章或签名"
+		case .lowConfidence: return String(localized: "系统没把握")
+		case .plugin:
+			let name = reviewer ?? String(localized: "判定插件")
+			let percent = Int((s.probability ?? 0) * 100)
+			// 有插值时字面上的 % 在键里是 %%（对照表里的键、英文都写 %%）。
+			return String(localized: "\(name) 认为认错了（约 \(percent)%）")
+		case .documentOnly: return String(localized: "多半是公章或签名")
 		}
 	}
 }

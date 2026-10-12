@@ -38,13 +38,16 @@ struct DocumentView: View {
 	var state: String {
 		switch doc.state {
 		case .running:
-			return doc.totalPages > 1 ? "正在识别第 \(min(doc.finishedCount + 1, doc.totalPages)) / \(doc.totalPages) 页" : "正在识别"
+			let current = min(doc.finishedCount + 1, doc.totalPages), total = doc.totalPages
+			return total > 1 ? String(localized: "正在识别第 \(current) / \(total) 页") : String(localized: "正在识别")
 		case .stopped:
-			return "认了 \(doc.finishedCount) 页就停了，共 \(doc.totalPages) 页"
+			let finished = doc.finishedCount, total = doc.totalPages
+			return String(localized: "认了 \(finished) 页就停了，共 \(total) 页")
 		case .failed:
-			return "出错了"
+			return String(localized: "出错了")
 		case .done:
-			return doc.totalPages > 1 ? "\(doc.totalPages) 页" : ""
+			let total = doc.totalPages
+			return total > 1 ? String(localized: "\(total) 页") : ""
 		}
 	}
 }
@@ -72,7 +75,7 @@ struct DocumentToolbar: ToolbarContent {
 			Toggle(isOn: $showBoxes) {
 				Label("显示识别框", systemImage: "rectangle.dashed")
 			}
-			.help(showBoxes ? "隐藏原图上的识别框（⇧⌘B）" : "显示原图上的识别框（⇧⌘B）")
+			.help(showBoxes ? String(localized: "隐藏原图上的识别框（⇧⌘B）") : String(localized: "显示原图上的识别框（⇧⌘B）"))
 		}
 		ToolbarItemGroup(placement: .primaryAction) {
 			if doc.isRunning {

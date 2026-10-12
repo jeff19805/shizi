@@ -193,7 +193,7 @@ public final class SystemPhotoLibrary: PhotoLibrary, @unchecked Sendable {
 	}
 
 	public func preview(for asset: PhotoAsset, pixels: Int, timeout: TimeInterval) -> PhotoImage {
-		guard let a = phAsset(asset.id) else { return .failed("照片图库里找不到这张了") }
+		guard let a = phAsset(asset.id) else { return .failed(String(localized: "照片图库里找不到这张了")) }
 		let o = PHImageRequestOptions()
 		// 只要一次、够大的那张；「快」的缩法拿本机现成的预览图，不为了凑准尺寸去下原图。
 		o.deliveryMode = .highQualityFormat
@@ -209,7 +209,7 @@ public final class SystemPhotoLibrary: PhotoLibrary, @unchecked Sendable {
 				return ticket.finish(.image(downscaledQuickly(cg, longSide: pixels)))
 			}
 			if info?[PHImageResultIsInCloudKey] as? Bool == true { return ticket.finish(.inCloud(nil)) }
-			ticket.finish(.failed(Self.describe(info?[PHImageErrorKey] as? NSError) ?? "没拿到图"))
+			ticket.finish(.failed(Self.describe(info?[PHImageErrorKey] as? NSError) ?? String(localized: "没拿到图")))
 		}
 		// 回调在主线程上来：这里在后台等它，主线程不能反过来等这里。
 		if let result = ticket.wait(timeout) { return result }
@@ -245,7 +245,7 @@ public final class SystemPhotoLibrary: PhotoLibrary, @unchecked Sendable {
 	public func image(
 		for asset: PhotoAsset, maxPixel: Int, allowDownload: Bool, timeout: TimeInterval, progress: (@Sendable (Double) -> Void)?
 	) -> PhotoImage {
-		guard let a = phAsset(asset.id) else { return .failed("照片图库里找不到这张了") }
+		guard let a = phAsset(asset.id) else { return .failed(String(localized: "照片图库里找不到这张了")) }
 		// 长边不超过 maxPixel，原图更小就要原图大小（不放大）。
 		let long = max(a.pixelWidth, a.pixelHeight, 1)
 		let scale = min(1, Double(maxPixel) / Double(long))
@@ -262,17 +262,17 @@ public final class SystemPhotoLibrary: PhotoLibrary, @unchecked Sendable {
 		let id = PHImageManager.default().requestImage(for: a, targetSize: size, contentMode: .aspectFit, options: options) { image, info in
 			// 要了高质量也可能先来一张降级的小图，不要它，等下一张。
 			if info?[PHImageResultIsDegradedKey] as? Bool == true { return }
-			if info?[PHImageCancelledKey] as? Bool == true { return ticket.finish(.failed("取图被取消了")) }
+			if info?[PHImageCancelledKey] as? Bool == true { return ticket.finish(.failed(String(localized: "取图被取消了"))) }
 			if let image {
 				var rect = CGRect(origin: .zero, size: image.size)
-				guard let cg = image.cgImage(forProposedRect: &rect, context: nil, hints: nil) else { return ticket.finish(.failed("图解不开")) }
+				guard let cg = image.cgImage(forProposedRect: &rect, context: nil, hints: nil) else { return ticket.finish(.failed(String(localized: "图解不开"))) }
 				// 给的图比要的大时再压一下（PhotoKit 偶尔给得比要的大）。
 				return ticket.finish(.image(downscaledQuickly(cg, longSide: maxPixel)))
 			}
 			let error = Self.describe(info?[PHImageErrorKey] as? NSError)
 			// 没让下载时系统也附一个「要联网才拿得到」的错，那不算原因。
 			if info?[PHImageResultIsInCloudKey] as? Bool == true { return ticket.finish(.inCloud(allowDownload ? error : nil)) }
-			ticket.finish(.failed(error ?? "没拿到图"))
+			ticket.finish(.failed(error ?? String(localized: "没拿到图")))
 		}
 		// 回调在主线程上来：这里在识别队列上等它，主线程不能反过来等识别队列，不然两边互相等死。
 		if let result = ticket.wait(timeout) { return result }
@@ -284,11 +284,11 @@ public final class SystemPhotoLibrary: PhotoLibrary, @unchecked Sendable {
 extension SystemPhotoLibrary {
 	@MainActor public func add(_ assets: [PhotoAsset], to target: AlbumTarget, done: @escaping @MainActor (String?) -> Void) {
 		let found = PHAsset.fetchAssets(withLocalIdentifiers: assets.map(\.id), options: nil)
-		guard found.count > 0 else { return done("照片图库里找不到这几张了") }
+		guard found.count > 0 else { return done(String(localized: "照片图库里找不到这几张了")) }
 		var album: PHAssetCollection?
 		if case .existing(let id) = target {
 			album = PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [id], options: nil).firstObject
-			guard album?.canPerform(.addContent) == true else { return done("这个相簿找不到了，或者不能往里加") }
+			guard album?.canPerform(.addContent) == true else { return done(String(localized: "这个相簿找不到了，或者不能往里加")) }
 		}
 		PHPhotoLibrary.shared().performChanges {
 			switch target {
@@ -298,7 +298,7 @@ extension SystemPhotoLibrary {
 				PHAssetCollectionChangeRequest.creationRequestForAssetCollection(withTitle: title).addAssets(found)
 			}
 		} completionHandler: { ok, error in
-			let problem = ok ? nil : (Self.describe(error as NSError?) ?? "照片图库没接受")
+			let problem = ok ? nil : (Self.describe(error as NSError?) ?? String(localized: "照片图库没接受"))
 			DispatchQueue.main.async { MainActor.assumeIsolated { done(problem) } }
 		}
 	}
@@ -309,15 +309,15 @@ extension SystemPhotoLibrary {
 		if error.domain == PHPhotosErrorDomain, let code = PHPhotosError.Code(rawValue: error.code) {
 			switch code {
 			// 连不上 iCloud 时，系统要等一阵才报这个。
-			case .networkError: return "网络出错，连不上 iCloud"
-			case .notEnoughSpace: return "这台 Mac 空间不够"
-			case .operationInterrupted: return "被打断了（临时的，下次再试）"
-			case .missingResource: return "照片图库里缺这张的原图"
-			case .userCancelled: return "取消了"
+			case .networkError: return String(localized: "网络出错，连不上 iCloud")
+			case .notEnoughSpace: return String(localized: "这台 Mac 空间不够")
+			case .operationInterrupted: return String(localized: "被打断了（临时的，下次再试）")
+			case .missingResource: return String(localized: "照片图库里缺这张的原图")
+			case .userCancelled: return String(localized: "取消了")
 			default: break
 			}
 		}
-		return "\(error.localizedDescription)（\(error.domain) \(error.code)）"
+		return String(localized: "\(error.localizedDescription)（\(error.domain) \(error.code)）")
 	}
 }
 

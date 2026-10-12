@@ -30,7 +30,11 @@
 - 改了代码要跑 `./scripts/test.sh`，全过才提交；加功能、修坑要配测试。
 - 改了拾字的界面要出图看一眼：`swift run shizi-snapshots <输出文件夹> <测试图文件夹>`（测试图文件夹里放研究目录的
   receipt.png、table.png，和 short.pdf、long.pdf 两个多页 PDF：README 和一份 30 来页的中文文档（比如本机 docs/plans 里的方案）用 Chrome 打印成 A4，几页和 30 多页），
-  浅色、深色都看，对着 `docs/design-spec.md` 查。
+  浅色、深色都看，对着 `docs/design-spec.md` 查。界面有中文、英文两种，后面加 `-AppleLanguages '(en)'` 再出一份英文的，看有没有字被截断。
+- 拾字界面上的中文直接写在代码里，英文写进 `scripts/app/en.lproj/Localizable.strings`（键是中文原文，占位符 `Int` 用 `%lld`、`String` 用 `%@`）。
+  SwiftUI 接口直接收字面量的（`Text("…")`、`Button("…")`、`.help("…")`……）自己会按语言取字；先存进 `String` 的要写成 `String(localized: "…")`。
+  句子里别直接插小数：`Double` 插进去会被格式化成 0.500000（中文界面也是），先转成文字。不是给人看的中文（存设置的键、发给判定服务的题目、
+  写进别的程序的字、用户的内容）不翻，加进 `LocalizationTests` 的 `untranslated`。漏翻的、用不上的英文，`LocalizationTests` 都会报。
 - 改了识别流程（`Pipeline`、`Tiles`、`Document`、`Rectify`、`Reading`、`Lines` 里的判断）要跑验收：
   改之前先跑 `node bench/bench.mjs <研究目录> --label 改前` 当基准，改完再跑 `--label 改后`，比两次的平均分、低于研究最好的张数和耗时
   （结果在 `bench/out/`，不进仓库）。分数掉了要么修，要么在提交说明里写清原因。

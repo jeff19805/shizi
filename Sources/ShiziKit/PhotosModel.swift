@@ -120,7 +120,8 @@ public final class PhotosModel {
 			do {
 				openedIndex = try PhotoIndex(path: indexPath)
 			} catch {
-				problem = "照片库打不开：\(error)"
+				let reason = "\(error)"
+				problem = String(localized: "照片库打不开：\(reason)")
 			}
 		}
 		return openedIndex
@@ -238,21 +239,23 @@ public final class PhotosModel {
 	/// 页头标题下面那句：在认就说认到哪了，不在认就说这个相簿认到什么程度。认完不另外报喜。
 	public var subtitle: String {
 		if let run, run.albumID == albumID {
-			if run.stopping { return "正在停……" }
+			if run.stopping { return String(localized: "正在停……") }
 			if run.isDownloading {
-				let first = run.downloaded == 0 ? "，头一张可能要等一两分钟" : ""
-				return "正在从 iCloud 下载原图来认：第 \(min(run.downloaded + 1, run.downloads.count)) / \(run.downloads.count) 张\(first)"
+				let first = run.downloaded == 0 ? String(localized: "，头一张可能要等一两分钟") : ""
+				let at = min(run.downloaded + 1, run.downloads.count)
+				return String(localized: "正在从 iCloud 下载原图来认：第 \(at) / \(run.downloads.count) 张\(first)")
 			}
-			return "正在识别：\(run.done) / \(run.total) 张"
+			return String(localized: "正在识别：\(run.done) / \(run.total) 张")
 		}
 		let c = counts
 		guard c.total > 0 else { return "" }
-		guard c.recognized + c.inCloud + c.failed > 0 else { return "\(c.total) 张，都还没认" }
-		var parts = ["认过 \(c.recognized) 张（\(c.withText) 张有字）"]
-		if c.inCloud > 0 { parts.append("\(c.inCloud) 张原图在 iCloud 上没下下来") }
-		if c.failed > 0 { parts.append("\(c.failed) 张出错") }
-		if c.notYet > 0 { parts.append("\(c.notYet) 张还没认") }
-		return "\(c.total) 张：" + parts.joined(separator: "，")
+		guard c.recognized + c.inCloud + c.failed > 0 else { return String(localized: "\(c.total) 张，都还没认") }
+		var parts = [String(localized: "认过 \(c.recognized) 张（\(c.withText) 张有字）")]
+		if c.inCloud > 0 { parts.append(String(localized: "\(c.inCloud) 张原图在 iCloud 上没下下来")) }
+		if c.failed > 0 { parts.append(String(localized: "\(c.failed) 张出错")) }
+		if c.notYet > 0 { parts.append(String(localized: "\(c.notYet) 张还没认")) }
+		let list = parts.joined(separator: String(localized: "，"))
+		return String(localized: "\(c.total) 张：\(list)")
 	}
 
 	// MARK: 认一批
@@ -328,8 +331,10 @@ public final class PhotosModel {
 		let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
 		let n = searchHits.count
 		if n == 0 || !searchIsCurrent { return "" }
-		if n >= Self.searchLimit { return "认过的 \(recognizedCount) 张照片里，带「\(query)」的至少 \(n) 张，只列最新的 \(n) 张" }
-		return "认过的 \(recognizedCount) 张照片里，带「\(query)」的有 \(n) 张"
+		if n >= Self.searchLimit {
+			return String(localized: "认过的 \(recognizedCount) 张照片里，带「\(query)」的至少 \(n) 张，只列最新的 \(n) 张")
+		}
+		return String(localized: "认过的 \(recognizedCount) 张照片里，带「\(query)」的有 \(n) 张")
 	}
 
 	// MARK: 在相簿里点开一张
@@ -413,9 +418,13 @@ public final class PhotosModel {
 						doc.start()
 						doc.loadPageImage(force: true)
 					case .inCloud(let reason):
+						let why = reason ?? String(localized: "系统没说原因")
 						self.viewProblems[asset.id] =
-							allowDownload ? "原图在 iCloud 上，没下下来：\(reason ?? "系统没说原因")" : "原图在 iCloud 上，设置里关了下载原图（或这台 Mac 剩余空间不到 3 GB）。"
-					case .timedOut: self.viewProblems[asset.id] = "等了 \(Int(Recognizer.downloadTimeout)) 秒原图还没从 iCloud 下下来，过一会儿再试。"
+							allowDownload
+							? String(localized: "原图在 iCloud 上，没下下来：\(why)")
+							: String(localized: "原图在 iCloud 上，设置里关了下载原图（或这台 Mac 剩余空间不到 3 GB）。")
+					case .timedOut:
+						self.viewProblems[asset.id] = String(localized: "等了 \(Int(Recognizer.downloadTimeout)) 秒原图还没从 iCloud 下下来，过一会儿再试。")
 					case .failed(let message): self.viewProblems[asset.id] = message
 					}
 				}
@@ -442,11 +451,11 @@ public final class PhotosModel {
 
 	/// 没有文件名时，用拍摄时间起个名。
 	static func photoName(_ asset: PhotoAsset) -> String {
-		guard let date = asset.created else { return "照片" }
+		guard let date = asset.created else { return String(localized: "照片（单张）", defaultValue: "照片") }
 		let f = DateFormatter()
 		f.locale = Locale(identifier: "en_US_POSIX")
 		f.dateFormat = "yyyy-MM-dd HH.mm"
-		return "照片 \(f.string(from: date))"
+		return String(localized: "照片 \(f.string(from: date))")
 	}
 
 	/// 打开看过的照片认完了：把字存进照片库（跟「识别」存的一样），按字搜得到，网格上也算认过。
@@ -509,7 +518,7 @@ public final class PhotosModel {
 	public func confirmNewAlbum() {
 		let name = newAlbumName.trimmingCharacters(in: .whitespacesAndNewlines)
 		if let items = newAlbumItems {
-			if name.isEmpty { problem = "相簿要有个名字。" } else { add(items, to: .new(name)) }
+			if name.isEmpty { problem = String(localized: "相簿要有个名字。") } else { add(items, to: .new(name)) }
 		}
 		newAlbumItems = nil
 	}
@@ -530,7 +539,7 @@ public final class PhotosModel {
 		library.add(items, to: target) { [weak self] problem in
 			guard let self else { return }
 			if let problem {
-				self.problem = "没加进相簿：\(problem)"
+				self.problem = String(localized: "没加进相簿：\(problem)")
 				return
 			}
 			self.reloadAlbums()

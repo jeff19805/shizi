@@ -40,14 +40,15 @@ extension Recognizer {
 			}
 		case .inCloud(let reason):
 			r.status = .icloud
-			r.problem = downloading ? "从 iCloud 下载原图没成：\(reason ?? "系统没说原因")" : "原图在 iCloud 上，下载原图关着"
+			let why = reason ?? String(localized: "系统没说原因")
+			r.problem = downloading ? String(localized: "从 iCloud 下载原图没成：\(why)") : String(localized: "原图在 iCloud 上，下载原图关着")
 		case .timedOut where downloading:
 			// 跟「在 iCloud 上」一样下次再认。
 			r.status = .icloud
-			r.problem = "等了 \(Int(downloadTimeout)) 秒原图还没从 iCloud 下下来，下次再认"
+			r.problem = String(localized: "等了 \(Int(downloadTimeout)) 秒原图还没从 iCloud 下下来，下次再认")
 		case .timedOut:
 			r.status = .failed
-			r.problem = "等了 \(Int(localTimeout)) 秒还没从照片图库取到图"
+			r.problem = String(localized: "等了 \(Int(localTimeout)) 秒还没从照片图库取到图")
 		case .failed(let message):
 			r.status = .failed
 			r.problem = message
@@ -128,7 +129,8 @@ final class PhotoBatchRun: @unchecked Sendable {
 		engine = recognizer.engine
 		pending = photos[...]
 		// 认一大批时别让 Mac 睡过去（屏幕可以暗）。
-		activity = ProcessInfo.processInfo.beginActivity(options: [.userInitiated, .idleSystemSleepDisabled], reason: "拾字在认照片里的字")
+		activity = ProcessInfo.processInfo.beginActivity(
+			options: [.userInitiated, .idleSystemSleepDisabled], reason: String(localized: "拾字在认照片里的字"))
 	}
 
 	/// 走一步（认一张或跳过一张），再把下一步排到识别队列末尾。
@@ -170,11 +172,11 @@ final class PhotoBatchRun: @unchecked Sendable {
 			}
 			r.status = .icloud
 			guard allowDownload else {
-				r.problem = "原图在 iCloud 上，下载原图关着"
+				r.problem = String(localized: "原图在 iCloud 上，下载原图关着")
 				return save(asset, r)
 			}
 			// 先记下来：第二趟没轮到就停了的，库里也知道它在 iCloud 上。
-			r.problem = "原图在 iCloud 上，还没下载"
+			r.problem = String(localized: "原图在 iCloud 上，还没下载")
 			try? index.upsert(r)
 			waiting.append((asset, r))
 		}
@@ -185,9 +187,9 @@ final class PhotoBatchRun: @unchecked Sendable {
 		autoreleasepool {
 			var r = item.record
 			if failures >= Recognizer.downloadFailureLimit {
-				r.problem = "前面连着 \(Recognizer.downloadFailureLimit) 张从 iCloud 下载都没成，这次先不下了"
+				r.problem = String(localized: "前面连着 \(Recognizer.downloadFailureLimit) 张从 iCloud 下载都没成，这次先不下了")
 			} else if !roomToDownload() {
-				r.problem = "原图在 iCloud 上，这台 Mac 剩余空间不到 3 GB，没下载"
+				r.problem = String(localized: "原图在 iCloud 上，这台 Mac 剩余空间不到 3 GB，没下载")
 			} else {
 				let image = library.image(
 					for: item.asset, maxPixel: Recognizer.photoMaxPixel, allowDownload: true, timeout: Recognizer.downloadTimeout)

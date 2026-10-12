@@ -3,13 +3,16 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleIdentifier</key><string>com.jiecan.shizi</string>
-	<key>CFBundleName</key><string>拾字</string>
-	<key>CFBundleDisplayName</key><string>拾字</string>
+	<key>CFBundleName</key><string>Shizi</string>
+	<key>CFBundleDisplayName</key><string>Shizi</string>
 	<key>CFBundleExecutable</key><string>Shizi</string>
 	<key>CFBundlePackageType</key><string>APPL</string>
 	<key>CFBundleShortVersionString</key><string>__VERSION__</string>
 	<key>CFBundleVersion</key><string>__VERSION__</string>
-	<key>CFBundleDevelopmentRegion</key><string>zh_CN</string>
+	<!-- 界面有英文、简体中文；繁体中文系统也显示简体中文。别的语言落到开发语言，也就是英文。中文名在 zh-Hans.lproj/InfoPlist.strings 里。 -->
+	<key>CFBundleDevelopmentRegion</key><string>en</string>
+	<key>CFBundleLocalizations</key>
+	<array><string>en</string><string>zh-Hans</string><string>zh-Hant</string></array>
 	<key>CFBundleIconFile</key><string>Shizi</string>
 	<key>LSHasLocalizedDisplayName</key><true/>
 	<key>LSMinimumSystemVersion</key><string>14.0</string>
@@ -18,12 +21,12 @@
 	<key>NSPrincipalClass</key><string>NSApplication</string>
 	<key>NSHumanReadableCopyright</key><string>Copyright © 2026 jiecan.net</string>
 	<!-- 第一次打开「照片」时系统弹窗里的说明。 -->
-	<key>NSPhotoLibraryUsageDescription</key><string>拾字读照片图库里的照片，认出上面的字，好按字找照片。认出的字只存在这台 Mac 上，照片不复制、不上传。</string>
+	<key>NSPhotoLibraryUsageDescription</key><string>Shizi reads the photos in your Photos library and recognizes the text in them, so you can find photos by their text. The text stays on this Mac; photos are never copied or uploaded.</string>
 	<!-- 图片和 PDF 能拖到 Dock 上的图标打开；只当备选，不抢「预览」的默认。 -->
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
-			<key>CFBundleTypeName</key><string>图片和 PDF</string>
+			<key>CFBundleTypeName</key><string>Images and PDFs</string>
 			<key>CFBundleTypeRole</key><string>Viewer</string>
 			<key>LSHandlerRank</key><string>Alternate</string>
 			<key>LSItemContentTypes</key>

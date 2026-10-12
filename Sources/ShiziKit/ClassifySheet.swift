@@ -65,7 +65,8 @@ struct ClassifySheet: View {
 				} else {
 					TextField(
 						"要找什么", text: Binding(get: { conditions[input] ?? "" }, set: { conditions[input] = $0 }),
-						prompt: Text(input == .image ? "比如：照片里有猫" : "比如：包含付款期限的约定"), axis: .vertical
+						prompt: Text(input == .image ? String(localized: "比如：照片里有猫") : String(localized: "比如：包含付款期限的约定")),
+						axis: .vertical
 					)
 					.lineLimit(2...4)
 					.textFieldStyle(.roundedBorder)
@@ -92,17 +93,17 @@ struct ClassifySheet: View {
 
 	/// 分哪些、把什么发到哪：看字只发认出的字（没认的照片要先「识别」）；看画面发缩小的照片，不下载原图。
 	var scope: String {
-		let where_ = photos.classifyDestination ?? "判定插件"
+		let where_ = photos.classifyDestination ?? String(localized: "判定插件")
 		if input == .image {
 			let n = photos.assets.count
-			return "分这个相簿的 \(n) 张：把每张照片缩到 \(ClassifyBatch.previewPixels) 像素发到 \(where_)（一张几十 KB），不下载 iCloud 上的原图。"
+			return String(localized: "分这个相簿的 \(n) 张：把每张照片缩到 \(ClassifyBatch.previewPixels) 像素发到 \(where_)（一张几十 KB），不下载 iCloud 上的原图。")
 		}
 		let n = photos.classifiable(.text).count
 		let c = photos.counts
 		let notYet = c.total - c.recognized
-		guard n > 0 else { return "这个相簿里还没有认出字的照片，先点「识别」；或者换成「看画面」。" }
-		var text = "分这个相簿里认出字的 \(n) 张：只把认出的字发到 \(where_)，不发照片。"
-		if notYet > 0 { text += "还有 \(notYet) 张没认，先点「识别」才分得到。" }
+		guard n > 0 else { return String(localized: "这个相簿里还没有认出字的照片，先点「识别」；或者换成「看画面」。") }
+		var text = String(localized: "分这个相簿里认出字的 \(n) 张：只把认出的字发到 \(where_)，不发照片。")
+		if notYet > 0 { text += String(localized: "还有 \(notYet) 张没认，先点「识别」才分得到。") }
 		return text
 	}
 
@@ -125,9 +126,9 @@ struct LabelFilterBar: View {
 		HStack(spacing: 8) {
 			ScrollView(.horizontal, showsIndicators: false) {
 				HStack(spacing: 8) {
-					chip("全部", count: photos.assets.count, selected: photos.labelFilter == nil) { photos.labelFilter = nil }
+					chip(String(localized: "全部"), count: photos.assets.count, selected: photos.labelFilter == nil) { photos.labelFilter = nil }
 					ForEach(photos.labelCounts, id: \.label) { item in
-						chip(item.label, count: item.count, selected: photos.labelFilter == item.label) { photos.labelFilter = item.label }
+						chip(Self.shown(item.label), count: item.count, selected: photos.labelFilter == item.label) { photos.labelFilter = item.label }
 							.disabled(item.count == 0)
 					}
 				}
@@ -138,16 +139,27 @@ struct LabelFilterBar: View {
 					.foregroundStyle(.secondary)
 					.help(
 						photos.classifyRules?.input == .image
-							? "这几张是分过类以后才加进来的（或者照片改过），也可能上次没分成；再点「分类」只问它们"
-							: "这几张是分过类以后才认出字的（或者字变了），也可能上次没分成；再点「分类」只问它们")
+							? String(localized: "这几张是分过类以后才加进来的（或者照片改过），也可能上次没分成；再点「分类」只问它们")
+							: String(localized: "这几张是分过类以后才认出字的（或者字变了），也可能上次没分成；再点「分类」只问它们"))
 			}
-			if let filter = photos.labelFilter, filter != PhotosModel.noText {
-				Button("存为相簿…") { photos.askNewAlbum(photos.shownAssets, name: "拾字 · \(filter)") }
+			if let filter = photos.labelFilter.map(Self.shown), photos.labelFilter != PhotosModel.noText {
+				Button("存为相簿…") { photos.askNewAlbum(photos.shownAssets, name: String(localized: "拾字 · \(filter)")) }
 					.help("把「\(filter)」这 \(photos.shownAssets.count) 张放进一个新相簿（照片不复制）")
 			}
 		}
 		.padding(.horizontal, 16)
 		.padding(.vertical, 8)
+	}
+
+	/// 识别核心定的几个固定标签（待确认、符合条件、不符合条件）只在显示时换成界面的语言；筛选、存进照片库的还是原来的值。
+	/// 类别名是用户自己写的，原样显示。
+	static func shown(_ label: String) -> String {
+		switch label {
+		case ClassifyRules.undecided: return String(localized: "待确认")
+		case ClassifyRules.matched: return String(localized: "符合条件")
+		case ClassifyRules.unmatched: return String(localized: "不符合条件")
+		default: return label
+		}
 	}
 
 	/// 一项：名字加张数；选中的用强调色（界面规范：强调色只给选中、进度、主按钮）。

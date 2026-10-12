@@ -30,7 +30,7 @@ public final class PluginSettings {
 	/// 文件在、却读不了（手改坏了）时不写：照空的改完存回去，原来的插件就全没了。
 	func update(_ change: (inout OCRConfig) -> Void) throws {
 		let loaded = OCRConfig.load(path: path)
-		if loaded.problem != nil { throw SettingsError("配置文件 \(path) 读不了，没改；先修好或删掉它") }
+		if loaded.problem != nil { throw SettingsError(String(localized: "配置文件 \(path) 读不了，没改；先修好或删掉它")) }
 		var config = loaded.config
 		change(&config)
 		try config.save(path: path)
@@ -152,9 +152,9 @@ struct PluginDraft: Equatable {
 
 	/// 名字：字母或数字开头，只用字母、数字、- 和 _，最多 32 个（跟灵犀给 MCP 服务起名的规矩一样）；也是钥匙串里的账号。
 	static func nameProblem(_ name: String) -> String? {
-		if name.isEmpty { return "要起个名字" }
+		if name.isEmpty { return String(localized: "要起个名字") }
 		guard name.range(of: "^[A-Za-z0-9][A-Za-z0-9_-]{0,31}$", options: .regularExpression) != nil else {
-			return "名字只能用英文字母、数字、- 和 _，字母或数字开头，最多 32 个"
+			return String(localized: "名字只能用英文字母、数字、- 和 _，字母或数字开头，最多 32 个")
 		}
 		return nil
 	}
@@ -170,13 +170,13 @@ struct PluginDraft: Equatable {
 	/// 存不了的原因；能存返回 nil。`existing` 是别的插件的名字。
 	func problem(existing: [String]) -> String? {
 		if let p = Self.nameProblem(name) { return p }
-		if existing.contains(name) { return "已经有一个叫「\(name)」的插件了" }
+		if existing.contains(name) { return String(localized: "已经有一个叫「\(name)」的插件了") }
 		guard let u = URL(string: url.trimmingCharacters(in: .whitespaces)), ["http", "https"].contains(u.scheme ?? ""), u.host != nil else {
-			return "地址要 http:// 或 https:// 开头"
+			return String(localized: "地址要 http:// 或 https:// 开头")
 		}
-		if u.user != nil || u.password != nil { return "地址里不要带用户名密码" }
-		if model.trimmingCharacters(in: .whitespaces).isEmpty { return "要填模型名" }
-		if !route && !review && !classify { return "看图、复核、分类至少选一样" }
+		if u.user != nil || u.password != nil { return String(localized: "地址里不要带用户名密码") }
+		if model.trimmingCharacters(in: .whitespaces).isEmpty { return String(localized: "要填模型名") }
+		if !route && !review && !classify { return String(localized: "看图、复核、分类至少选一样") }
 		if !newKey.isEmpty, let p = PluginKeys.problem(newKey) { return p }
 		return nil
 	}
@@ -184,12 +184,13 @@ struct PluginDraft: Equatable {
 	/// 这份设置会把什么发到哪个地址（设置页上要写明）。
 	var egress: String {
 		// 中文和英文、数字之间空一格；还没填好地址时说「这个地址」，前面不空。
-		let host = URL(string: url.trimmingCharacters(in: .whitespaces))?.host.map { " \($0)" } ?? "这个地址"
+		// 英文对照照这个拼法配好了空格：「会把」后面带空格、「发到%@。」前面带空格、「这个地址」前面带空格（跟地址那一支的空格对上）。
+		let host = URL(string: url.trimmingCharacters(in: .whitespaces))?.host.map { " \($0)" } ?? String(localized: "这个地址")
 		var what: [String] = []
-		if route { what.append("每张要认的图（缩到长边 1600）") }
-		if review { what.append("可能认错的行和前后两行") }
-		if classify { what.append("分类时照片认出的字（看画面时是缩到长边 \(ClassifyBatch.previewPixels) 的照片）") }
-		return what.isEmpty ? "" : "会把" + what.joined(separator: "、") + "发到\(host)。"
+		if route { what.append(String(localized: "每张要认的图（缩到长边 1600）")) }
+		if review { what.append(String(localized: "可能认错的行和前后两行")) }
+		if classify { what.append(String(localized: "分类时照片认出的字（看画面时是缩到长边 \(ClassifyBatch.previewPixels) 的照片）")) }
+		return what.isEmpty ? "" : String(localized: "会把") + what.joined(separator: String(localized: "、")) + String(localized: "发到\(host)。")
 	}
 }
 
@@ -201,10 +202,14 @@ struct PluginPreset: Identifiable {
 	let note: String
 
 	static let all: [PluginPreset] = [
-		preset("clef", "Clef", url: "http://", model: "clef", route: true, note: "局域网里的 Clef 服务，地址自己填；看图和复核都能接。"),
-		preset("jev", "TypeSafe Jev", url: "https://api.typesafe.ai", model: "jev-latest", route: false, note: "收不收图，填好密钥后点「测试连接」看。"),
-		preset("lingxi", "灵犀判定", url: "http://127.0.0.1:18486", model: "lingxi-decision", route: false, note: "灵犀自己的判定网关，不收图，只能接复核；密钥在灵犀的「实验室」里生成。"),
-		preset("", "自己填", url: "https://", model: "", route: false, note: ""),
+		// Clef、TypeSafe Jev 是服务自己的名字，不翻，测试也按名字找它们；「灵犀判定」「自己填」要翻。名字同时是 id，只给列表认是哪一项，跟着语言变不要紧。
+		preset("clef", "Clef", url: "http://", model: "clef", route: true, note: String(localized: "局域网里的 Clef 服务，地址自己填；看图和复核都能接。")),
+		preset(
+			"jev", "TypeSafe Jev", url: "https://api.typesafe.ai", model: "jev-latest", route: false, note: String(localized: "收不收图，填好密钥后点「测试连接」看。")),
+		preset(
+			"lingxi", String(localized: "灵犀判定"), url: "http://127.0.0.1:18486", model: "lingxi-decision", route: false,
+			note: String(localized: "灵犀自己的判定网关，不收图，只能接复核；密钥在灵犀的「实验室」里生成。")),
+		preset("", String(localized: "自己填"), url: "https://", model: "", route: false, note: ""),
 	]
 
 	static func preset(_ name: String, _ title: String, url: String, model: String, route: Bool, note: String) -> PluginPreset {

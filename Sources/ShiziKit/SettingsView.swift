@@ -23,7 +23,9 @@ public struct SettingsView: View {
 
 	public var body: some View {
 		TabView(selection: $tab) {
-			RecognitionTab(settings: plugins).tabItem { Label("识别", systemImage: "text.viewfinder") }.tag(Tab.recognition)
+			// 「识别」在这里是名词（英文 Recognition），菜单和按钮上是动词（Recognize）：单独一个键，中文照样显示「识别」。
+			RecognitionTab(settings: plugins).tabItem { Label(String(localized: "识别（设置）", defaultValue: "识别"), systemImage: "text.viewfinder") }
+				.tag(Tab.recognition)
 			PluginsTab(settings: plugins).tabItem { Label("判定插件", systemImage: "puzzlepiece.extension") }.tag(Tab.plugins)
 			ConnectTab().tabItem { Label("接入", systemImage: "link") }.tag(Tab.connect)
 		}
@@ -45,10 +47,13 @@ struct RecognitionTab: View {
 	@AppStorage(RecognitionDefaults.plugins) private var plugins = true
 	@AppStorage(RecognitionDefaults.photoDownload) private var photoDownload = true
 	@AppStorage(RecognitionDefaults.photoPlugins) private var photoPlugins = false
+	@State private var language = InterfaceLanguage.current()
+	/// 这次打开设置以后改过界面语言：提示要重开。
+	@State private var languageChanged = false
 
 	var body: some View {
 		Form {
-			Section("识别") {
+			Section(String(localized: "识别（设置）", defaultValue: "识别")) {
 				Picker("认法", selection: $mode) {
 					Text("自动").tag("auto")
 					Text("逐行").tag("lines")
@@ -90,6 +95,26 @@ struct RecognitionTab: View {
 					.help("下载的原图存进照片图库，占这台 Mac 的空间；剩余空间不到 3 GB 时不下载。")
 				Toggle("认照片时也用判定插件", isOn: $photoPlugins)
 					.help("会把每张照片缩小后发到插件的服务，所以默认不用。")
+			}
+			Section("界面") {
+				// 语言的名字照它自己的写法，不跟着界面翻：看不懂当前界面的人也找得到自己的语言。
+				Picker("界面语言", selection: $language) {
+					Text("跟随系统").tag(InterfaceLanguage.system)
+					Text(verbatim: "简体中文").tag(InterfaceLanguage.chinese)
+					Text(verbatim: "English").tag(InterfaceLanguage.english)
+				}
+				.help("拾字界面上的字用哪种语言。跟随系统时，系统语言是中文就用中文，别的都用英文。重开拾字后生效。")
+				.onChange(of: language) { _, choice in
+					InterfaceLanguage.set(choice)
+					languageChanged = true
+				}
+				if languageChanged {
+					LabeledContent("重开拾字后生效") {
+						if InterfaceLanguage.canRelaunch {
+							Button("现在重开") { InterfaceLanguage.relaunch() }
+						}
+					}
+				}
 			}
 		}
 		.formStyle(.grouped)
@@ -242,8 +267,8 @@ struct PluginRow: View {
 		} else {
 			parts.append(plugin.command.first ?? "")
 		}
-		let names = ["route": "看图", "review": "复核", "classify": "分类"]
-		parts.append(plugin.hooks.map { names[$0] ?? $0 }.joined(separator: "、"))
+		let names = ["route": String(localized: "看图"), "review": String(localized: "复核"), "classify": String(localized: "分类")]
+		parts.append(plugin.hooks.map { names[$0] ?? $0 }.joined(separator: String(localized: "、")))
 		return parts.filter { !$0.isEmpty }.joined(separator: " · ")
 	}
 }
@@ -271,8 +296,11 @@ struct PluginEditor: View {
 	var body: some View {
 		VStack(alignment: .leading, spacing: 12) {
 			VStack(alignment: .leading, spacing: 4) {
-				Text(target.original.map { "改「\($0.name)」" } ?? "添加判定插件\(target.preset.map { "：\($0.title)" } ?? "")")
-					.font(.headline)
+				Text(
+					target.original.map { String(localized: "改「\($0.name)」") }
+						?? target.preset.map { String(localized: "添加判定插件：\($0.title)") } ?? String(localized: "添加判定插件")
+				)
+				.font(.headline)
 				if let note = target.preset?.note, !note.isEmpty {
 					Text(note).font(.callout).foregroundStyle(.secondary)
 				}
@@ -356,10 +384,11 @@ struct TestOutcome {
 		switch result {
 		case .success(let out):
 			var parts: [String] = []
-			if let ms = (out["elapsedMs"] as? NSNumber)?.intValue { parts.append("\(ms) 毫秒") }
-			if let m = out["serverModel"] as? String { parts.append("服务说它是 \(m)") }
-			if let images = out["images"] as? String { parts.append(images == "收" ? "收图" : "不收图") }
-			lines = ["通了" + (parts.isEmpty ? "" : "：" + parts.joined(separator: "，"))]
+			if let ms = (out["elapsedMs"] as? NSNumber)?.intValue { parts.append(String(localized: "\(ms) 毫秒")) }
+			if let m = out["serverModel"] as? String { parts.append(String(localized: "服务说它是 \(m)")) }
+			// 「收」是插件回的值（ocr-plugin-systemone 写的），不是界面上的字，不翻。
+			if let images = out["images"] as? String { parts.append(images == "收" ? String(localized: "收图") : String(localized: "不收图")) }
+			lines = [parts.isEmpty ? String(localized: "通了") : String(localized: "通了：\(parts.joined(separator: String(localized: "，")))")]
 			warnings = out["warnings"] as? [String] ?? []
 		case .failure(let f):
 			failure = f.message
@@ -408,17 +437,17 @@ struct ConnectTab: View {
 				LabeledContent {
 					lingxiAction(path)
 				} label: {
-					ClientLabel(title: "灵犀", detail: lingxiDetail(path), symbol: "sparkles")
+					ClientLabel(title: String(localized: "灵犀"), detail: lingxiDetail(path), symbol: "sparkles")
 				}
 				LabeledContent {
-					copyButton("复制命令", text: claude)
+					copyButton(String(localized: "复制命令"), text: claude)
 				} label: {
-					ClientLabel(title: "Claude Code", detail: "复制以后在终端里运行", symbol: "terminal")
+					ClientLabel(title: "Claude Code", detail: String(localized: "复制以后在终端里运行"), symbol: "terminal")
 				}
 				LabeledContent {
-					copyButton("复制配置", text: json)
+					copyButton(String(localized: "复制配置"), text: json)
 				} label: {
-					ClientLabel(title: "别的助手", detail: "写进它的 MCP 配置", symbol: "ellipsis.curlybraces")
+					ClientLabel(title: String(localized: "别的助手"), detail: String(localized: "写进它的 MCP 配置"), symbol: "ellipsis.curlybraces")
 				}
 			} header: {
 				Text("让灵犀、Claude Code 这些助手也能用拾字认字")
@@ -451,18 +480,19 @@ struct ConnectTab: View {
 		} message: {
 			Text(
 				(lingxi.entry == nil
-					? "在 \(LingxiConfig.path) 末尾加一节 [mcpServers.\(LingxiConfig.defaultName)]，用拾字里带的识别服务："
-					: "把 \(LingxiConfig.path) 里 [mcpServers.\(lingxi.entry!.name)] 的 command 换成：")
-					+ "\n\(path)\n原来的文件另存一份「config.toml.拾字备份」。")
+					? String(localized: "在 \(LingxiConfig.path) 末尾加一节 [mcpServers.\(LingxiConfig.defaultName)]，用拾字里带的识别服务：")
+					: String(localized: "把 \(LingxiConfig.path) 里 [mcpServers.\(lingxi.entry!.name)] 的 command 换成："))
+					// 备份的文件名是 LingxiConfig 真写出来的名字，不翻：当参数插进去，英文界面里也原样显示。
+					+ String(localized: "\n\(path)\n原来的文件另存一份「\("config.toml.拾字备份")」。"))
 		}
 	}
 
 	func lingxiDetail(_ path: String) -> String {
-		guard lingxi.found else { return "没找到灵犀（装好、打开过一次以后再来）" }
-		guard let entry = lingxi.entry else { return "还没接入" }
-		if entry.command == path { return "已接入，用的是拾字里带的" }
-		if let c = entry.command, !FileManager.default.fileExists(atPath: c) { return "接着的识别服务已经不在了" }
-		return "用的是别的识别服务"
+		guard lingxi.found else { return String(localized: "没找到灵犀（装好、打开过一次以后再来）") }
+		guard let entry = lingxi.entry else { return String(localized: "还没接入") }
+		if entry.command == path { return String(localized: "已接入，用的是拾字里带的") }
+		if let c = entry.command, !FileManager.default.fileExists(atPath: c) { return String(localized: "接着的识别服务已经不在了") }
+		return String(localized: "用的是别的识别服务")
 	}
 
 	@ViewBuilder func lingxiAction(_ path: String) -> some View {
@@ -472,8 +502,9 @@ struct ConnectTab: View {
 			if entry.command == path {
 				Image(systemName: "checkmark.circle").foregroundStyle(.secondary).help("灵犀里的「\(entry.name)」用的就是拾字里带的")
 			} else {
+				let command = entry.command ?? String(localized: "（没写 command）")
 				Button("改成拾字里带的…") { confirming = true }
-					.help("灵犀里的「\(entry.name)」现在用的是：\(entry.command ?? "（没写 command）")")
+					.help("灵犀里的「\(entry.name)」现在用的是：\(command)")
 			}
 		} else {
 			Button("接入…") { confirming = true }
@@ -481,7 +512,7 @@ struct ConnectTab: View {
 	}
 
 	func copyButton(_ title: String, text: String) -> some View {
-		Button(copied == text ? "已复制" : title) {
+		Button(copied == text ? String(localized: "已复制") : title) {
 			NSPasteboard.general.clearContents()
 			NSPasteboard.general.setString(text, forType: .string)
 			copied = text
@@ -503,7 +534,7 @@ struct ConnectTab: View {
 			changed = true
 			problem = nil
 		} catch {
-			problem = "没改成：\(error.localizedDescription)"
+			problem = String(localized: "没改成：\(error.localizedDescription)")
 		}
 	}
 }
@@ -543,13 +574,13 @@ public enum AboutPanel {
 		let center = NSMutableParagraphStyle()
 		center.alignment = .center
 		let credits = NSAttributedString(
-			string: "把图里的字拾出来。\nmacOS 自带的文字识别，全在本机，不联网。",
+			string: String(localized: "把图里的字拾出来。\nmacOS 自带的文字识别，全在本机，不联网。"),
 			attributes: [
 				.font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize), .foregroundColor: NSColor.secondaryLabelColor, .paragraphStyle: center,
 			])
 		// 版本号只写一遍：Info.plist 里两个版本号一样，系统默认会写成「0.0.20 (0.0.20)」。
 		NSApp.orderFrontStandardAboutPanel(options: [
-			.applicationName: "拾字", .applicationVersion: OCRVersion.current, .version: "", .credits: credits,
+			.applicationName: String(localized: "拾字"), .applicationVersion: OCRVersion.current, .version: "", .credits: credits,
 		])
 	}
 }

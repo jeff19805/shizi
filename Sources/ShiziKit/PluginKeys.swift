@@ -12,9 +12,9 @@ enum PluginKeys {
 
 	/// 存不了的密钥：空的、有换行的、有非 ASCII 字的（security 读出来会变成十六进制，插件就拿错了）。
 	static func problem(_ key: String) -> String? {
-		if key.isEmpty { return "密钥是空的" }
-		if key.contains(where: \.isNewline) { return "密钥里不能有换行" }
-		if !key.unicodeScalars.allSatisfy({ $0.isASCII && $0.value >= 0x20 && $0.value < 0x7F }) { return "密钥里只能有英文字母、数字和符号" }
+		if key.isEmpty { return String(localized: "密钥是空的") }
+		if key.contains(where: \.isNewline) { return String(localized: "密钥里不能有换行") }
+		if !key.unicodeScalars.allSatisfy({ $0.isASCII && $0.value >= 0x20 && $0.value < 0x7F }) { return String(localized: "密钥里只能有英文字母、数字和符号") }
 		return nil
 	}
 
@@ -30,7 +30,7 @@ enum PluginKeys {
 		let hex = key.utf8.map { String(format: "%02x", $0) }.joined()
 		let r = run(["-i"], input: "add-generic-password -U -s \(service) -a \(name) -X \(hex)\n")
 		// 只认新服务下的这一项：旧服务下还有一份时，新的没存进去也会被它蒙混过去，插件就拿旧密钥去连。
-		guard r.status == 0, has(name, in: [service]) else { throw SettingsError("密钥没存进钥匙串") }
+		guard r.status == 0, has(name, in: [service]) else { throw SettingsError(String(localized: "密钥没存进钥匙串")) }
 	}
 
 	/// 读出来（只在插件改名、要把密钥挪到新名字下时用）。

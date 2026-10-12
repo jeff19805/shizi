@@ -1,0 +1,400 @@
+/* 拾字界面的英文。键是代码里的中文原文，值是英文；规矩见 AGENTS.md。LocalizationTests 会查漏翻、用不上的英文和占位符。 */
+
+/* SettingsView.swift */
+"识别" = "Recognize";
+"判定插件" = "Judgment Plugins";
+"接入" = "Connect";
+"认法" = "Recognition mode";
+"自动" = "Automatic";
+"逐行" = "Line by Line";
+"认文档" = "Document";
+"自动：自己看要不要按文档认（表格、分栏、竖排）。认文档要 macOS 26。" = "Automatic: decides on its own whether to recognize as a document (tables, columns, vertical text). Document requires macOS 26.";
+"识别语言" = "Recognition language";
+"自动判断" = "Automatic";
+"中文优先" = "Chinese First";
+"中文优先：先按中文认，汉字夹在字母、数字、算式里也认得准；整页几乎没有汉字（英文、西班牙文……）或有中文认不了的字（韩文、日文……）时，自动改回自动判断。灵犀、Claude Code 调识别服务时也照这个认。" = "Chinese First: recognizes text as Chinese first, so Chinese characters mixed with letters, digits, or formulas come out right. When a page has almost no Chinese (English, Spanish…) or has text Chinese recognition can’t read (Korean, Japanese…), it switches back to Automatic. Lingxi and Claude Code follow this setting too when they call the recognition service.";
+"拉正拍歪的纸" = "Straighten tilted pages";
+"总是拉正" = "Always Straighten";
+"不拉正" = "Never Straighten";
+"拍歪的纸先拉正再认。自动：明显歪了才拉。" = "Straightens pages photographed at an angle before recognizing them. Automatic: only when clearly tilted.";
+"大图里的小字" = "Small text in large images";
+"总是切块" = "Always Split into Tiles";
+"不切块" = "Never Split";
+"字很小时把图切成几块细认。" = "When text is very small, splits the image into tiles and recognizes each one closely.";
+"PDF 里有文字时直接用" = "Use a PDF’s text layer when it has one";
+"Word、浏览器导出的 PDF 里本来就有字：直接用，一字不差，也快得多；里面的图片另外认。扫描件、扫描件上别的软件加的隐形文字层、乱码的文字层照样认图上的字。认法选「认文档」时不用。" = "PDFs exported from Word or a browser already contain their text: it’s used as is, exact and much faster, and images inside are recognized separately. For scans, invisible text layers that other software added to scans, and garbled text layers, the text is still recognized from the image. Not used when Recognition mode is Document.";
+"找二维码和条码" = "Detect QR codes and barcodes";
+"用判定插件" = "Use judgment plugins";
+"认之前先看图、认完复核可能认错的行。插件在「判定插件」里加。" = "Plugins check the image before recognition and review lines that may be misrecognized afterward. Add plugins in Judgment Plugins.";
+"照片" = "Photos";
+"原图在 iCloud 上时下载来认" = "Download originals from iCloud to recognize them";
+"下载的原图存进照片图库，占这台 Mac 的空间；剩余空间不到 3 GB 时不下载。" = "Downloaded originals are stored in your Photos library and take up space on this Mac. Nothing is downloaded when less than 3 GB is free.";
+"认照片时也用判定插件" = "Use judgment plugins for photos too";
+"会把每张照片缩小后发到插件的服务，所以默认不用。" = "Sends a downsized copy of every photo to the plugin’s service, so it’s off by default.";
+"界面" = "Interface";
+"界面语言" = "Language";
+"跟随系统" = "System Default";
+"拾字界面上的字用哪种语言。跟随系统时，系统语言是中文就用中文，别的都用英文。重开拾字后生效。" = "The language of Shizi’s interface. With System Default, Shizi uses Chinese if your system language is Chinese, and English otherwise. Takes effect after you relaunch Shizi.";
+"重开拾字后生效" = "Takes effect after you relaunch Shizi";
+"现在重开" = "Relaunch Now";
+"还没有判定插件。不装也照样认字。" = "No judgment plugins yet. Shizi recognizes text fine without them.";
+"密钥存在钥匙串里，不进配置文件。" = "API keys are stored in your keychain, not in the configuration file.";
+"添加插件…" = "Add Plugin…";
+"删除「%@」？" = "Delete “%@”?";
+"删除" = "Delete";
+"取消" = "Cancel";
+"钥匙串里它的密钥也一起删掉。" = "Its API key in your keychain will be deleted too.";
+"启用" = "Enable";
+"停用（配置留着）" = "Disable (keeps its settings)";
+"改地址、模型、密钥" = "Edit URL, model, and API key";
+"这个插件不是拾字带的，在配置文件里改" = "This plugin didn’t come with Shizi; edit it in the configuration file";
+"编辑…" = "Edit…";
+"删除…" = "Delete…";
+"看图" = "Image check";
+"复核" = "Review";
+"分类" = "Classify";
+"、" = ", ";
+"改「%@」" = "Edit “%@”";
+"添加判定插件：%@" = "Add Judgment Plugin: %@";
+"添加判定插件" = "Add Judgment Plugin";
+"名字" = "Name";
+"英文字母、数字、- 和 _" = "Letters, digits, - and _";
+"地址" = "URL";
+"http://地址:端口" = "http://host:port";
+"模型" = "Model";
+"密钥" = "API key";
+"已存在钥匙串 · 留空不变" = "Saved in keychain · leave blank to keep it";
+"还没存" = "Not saved yet";
+"看图（认之前把图发过去）" = "Image check (sends the image before recognition)";
+"复核可能认错的行" = "Review lines that may be misrecognized";
+"分类照片（把认出的字或缩小的照片发过去）" = "Classify photos (sends recognized text or downsized photos)";
+"测试连接" = "Test Connection";
+"保存" = "Save";
+"%lld 毫秒" = "%lld ms";
+"服务说它是 %@" = "server reports %@";
+"收图" = "accepts images";
+"不收图" = "doesn’t accept images";
+"通了" = "Connected";
+"通了：%@" = "Connected: %@";
+"，" = ", ";
+"灵犀" = "Lingxi";
+"复制命令" = "Copy Command";
+"复制以后在终端里运行" = "Copy it, then run it in Terminal";
+"复制配置" = "Copy Configuration";
+"别的助手" = "Other assistants";
+"写进它的 MCP 配置" = "Add to the assistant’s MCP configuration";
+"让灵犀、Claude Code 这些助手也能用拾字认字" = "Let assistants like Lingxi and Claude Code use Shizi to recognize text";
+"改好了。在灵犀里重启 ocr 才用上。" = "Done. Restart ocr in Lingxi to start using it.";
+"识别服务" = "Recognition service";
+"在访达中显示" = "Show in Finder";
+"改灵犀的配置？" = "Change Lingxi’s configuration?";
+"改" = "Change";
+"在 %@ 末尾加一节 [mcpServers.%@]，用拾字里带的识别服务：" = "Adds a [mcpServers.%2$@] section to the end of %1$@ that uses Shizi’s built-in recognition service:";
+"把 %@ 里 [mcpServers.%@] 的 command 换成：" = "Changes the command of [mcpServers.%2$@] in %1$@ to:";
+"\n%@\n原来的文件另存一份「%@」。" = "\n%@\nA copy of the original file is saved as “%@”.";
+"没找到灵犀（装好、打开过一次以后再来）" = "Lingxi not found (install it and open it once, then come back)";
+"还没接入" = "Not connected";
+"已接入，用的是拾字里带的" = "Connected, using Shizi’s built-in service";
+"接着的识别服务已经不在了" = "The connected recognition service no longer exists";
+"用的是别的识别服务" = "Using a different recognition service";
+"灵犀里的「%@」用的就是拾字里带的" = "“%@” in Lingxi already uses Shizi’s built-in service";
+"改成拾字里带的…" = "Use Shizi’s Service…";
+"灵犀里的「%@」现在用的是：%@" = "“%1$@” in Lingxi currently uses: %2$@";
+"（没写 command）" = "(no command set)";
+"接入…" = "Connect…";
+"已复制" = "Copied";
+"没改成：%@" = "Couldn’t change it: %@";
+"把图里的字拾出来。\nmacOS 自带的文字识别，全在本机，不联网。" = "Picks the text out of your images.\nBuilt-in macOS text recognition, entirely on this Mac, no internet needed.";
+
+/* PluginSettings.swift */
+"配置文件 %@ 读不了，没改；先修好或删掉它" = "Can’t read the configuration file %@, so nothing was changed. Fix or delete it first.";
+"要起个名字" = "Enter a name";
+"名字只能用英文字母、数字、- 和 _，字母或数字开头，最多 32 个" = "A name can only use letters, digits, - and _, must start with a letter or digit, and can be up to 32 characters long";
+"已经有一个叫「%@」的插件了" = "There’s already a plugin named “%@”";
+"地址要 http:// 或 https:// 开头" = "The URL must start with http:// or https://";
+"地址里不要带用户名密码" = "Don’t include a user name or password in the URL";
+"要填模型名" = "Enter a model name";
+"看图、复核、分类至少选一样" = "Turn on at least one of image check, review, or classify";
+"这个地址" = " this URL";
+"每张要认的图（缩到长边 1600）" = "every image to be recognized (scaled to 1600 px on the long side)";
+"可能认错的行和前后两行" = "lines that may be misrecognized (with the lines just above and below)";
+"分类时照片认出的字（看画面时是缩到长边 %lld 的照片）" = "text recognized from photos being classified (for By Image, the photos scaled to %lld px on the long side)";
+"会把" = "Sends ";
+"发到%@。" = " to%@.";
+"局域网里的 Clef 服务，地址自己填；看图和复核都能接。" = "A Clef service on your local network; enter its URL yourself. Supports both image check and review.";
+"收不收图，填好密钥后点「测试连接」看。" = "To find out whether it accepts images, enter the API key and click Test Connection.";
+"灵犀自己的判定网关，不收图，只能接复核；密钥在灵犀的「实验室」里生成。" = "Lingxi’s own judgment gateway. It doesn’t accept images, so it supports review only. Generate the API key in Lingxi’s Lab.";
+"自己填" = "Custom";
+
+/* PluginKeys.swift */
+"密钥是空的" = "The API key is empty";
+"密钥里不能有换行" = "The API key can’t contain line breaks";
+"密钥里只能有英文字母、数字和符号" = "The API key can only contain English letters, digits, and symbols";
+"密钥没存进钥匙串" = "Couldn’t save the API key to the keychain";
+
+/* Commands.swift */
+"关于拾字" = "About Shizi";
+"整页" = "Page";
+"显示识别框" = "Show Text Boxes";
+"返回相簿" = "Back to Album";
+"打开…" = "Open…";
+"复制全文" = "Copy All Text";
+"识别这个相簿" = "Recognize This Album";
+"重新识别" = "Recognize Again";
+"停止" = "Stop";
+"导出 Markdown…" = "Export Markdown…";
+"导出纯文字…" = "Export Plain Text…";
+"导出 JSON（带每行位置）…" = "Export JSON (with Line Positions)…";
+
+/* Workspace.swift */
+"%@：%@" = "%@: %@";
+"粘贴的 PDF" = "Pasted PDF";
+"粘贴的截图" = "Pasted Screenshot";
+"剪贴板里的图读不了：%@" = "Couldn’t read the image on the clipboard: %@";
+
+/* ShiziApp.swift */
+"拾字" = "Shizi";
+"灵犀判定" = "Lingxi Decision";
+
+/* RecognitionReport.swift */
+"文字层" = "Text layer";
+"语言" = "Language";
+"拉正" = "Straightening";
+"纸歪了约 %lld 度，拉正了再认" = "The paper was tilted about %lld°; straightened before recognition";
+"小字" = "Small text";
+"字很小，切成 %lld 块细认" = "The text is small; split into %lld tiles for a closer look";
+"放大 2 倍再认" = "Enlarged 2× before recognition";
+"二维码" = "QR codes";
+"%lld 个" = "%lld";
+"可能认错" = "May be misrecognized";
+"没有" = "None";
+"%lld 行（判定插件认为的 %lld 行）" = "Lines: %lld (%lld flagged by judgment plugins)";
+"%lld 行" = "Lines: %lld";
+"用时" = "Time";
+"PDF 自带的文字（没有 OCR）" = "Text built into the PDF (no OCR)";
+"认文档（表格、分栏、竖排）" = "Document (tables, columns, vertical text)";
+"表格" = "table";
+"分栏" = "columns";
+"竖排" = "vertical text";
+"认文档：判定插件看出有%@" = "Document (judgment plugins detected %@)";
+"认文档：版面像分了几栏" = "Document (the layout looks like it has columns)";
+"用了；页上 %lld 张图里的字另外认的" = "Used; text inside images on this page (%lld) was recognized separately";
+"用了" = "Used";
+"没有（扫描件这类），认的是图上的字" = "None (a scan or similar); recognized the text in the image";
+"只有别的软件加的隐形文字层，质量不知道，没用" = "Only an invisible text layer added by other software, of unknown quality; not used";
+"同样的字有可见、隐形两份（被别的软件 OCR 过），没用" = "The same text appears twice, visible and invisible (OCR'd by other software); not used";
+"这页以图为主，整页认图" = "This page is mostly images; recognized the whole page as an image";
+"有乱码（字体没带编码表），没用" = "Garbled characters (a font has no encoding table); not used";
+"抽查一段跟页面上的字对不上，没用" = "A spot check didn't match the text on the page; not used";
+"指定：%@" = "Specified: %@";
+"中文优先：按中文认" = "Chinese First: recognized as Chinese";
+"中文优先：这页几乎没有汉字，改用自动判断" = "Chinese First: almost no Chinese characters on this page, so switched to Automatic";
+"中文优先：有中文认不了的字（韩文、日文这类），改用自动判断" = "Chinese First: some characters can't be read as Chinese (such as Korean or Japanese), so switched to Automatic";
+"中文优先：上一页是西文，这页也按自动判断认" = "Chinese First: the previous page was in a Western language, so this page also used Automatic";
+"中文优先：上一页是西文，这页汉字不少，改回按中文认" = "Chinese First: the previous page was in a Western language, but this page has plenty of Chinese, so switched back to Chinese";
+"自动判断（设置 › 识别 里能改成中文优先）" = "Automatic (you can change it to Chinese First in Settings › Recognition)";
+"没配判定插件" = "No judgment plugins set up";
+"认照片默认不用判定插件（设置 › 识别 › 照片 里能开）" = "Photos don't use judgment plugins by default (you can turn them on in Settings › Recognition › Photos)";
+"这次没用判定插件（设置 › 识别 里关了）" = "Judgment plugins weren't used this time (turned off in Settings › Recognition)";
+"认法不是「自动」，插件不看图" = "Recognition mode isn't “Automatic”, so plugins don't check the image";
+"%@ 看图没成：%@，这一步按代码规则处理" = "%@ couldn't check the image (%@), so built-in rules were used for this step";
+"%@ 看了图（%@）：%@" = "%@ checked the image (%@): %@";
+"这一页没有系统没把握的长行，用不着插件复核" = "No long lines on this page that the system was unsure of, so no plugin review was needed";
+"%@ 复核没成：%@，可能认错的只按系统可信度标" = "%@ couldn't review (%@), so lines that may be misrecognized are marked by system confidence only";
+"%@ 复核了 %lld 行（%@）：%lld 行可能认错，%lld 行没问题" = "%1$@ reviewed lines (%3$@): %2$lld in total, %4$lld may be misrecognized, %5$lld fine";
+"配着的插件这一页用不上" = "The configured plugins weren't needed for this page";
+"拍的照片" = "camera photo";
+"没看出表格、分栏、竖排，按普通排版认" = "no table, columns, or vertical text detected; recognized as a regular layout";
+"看出是%@" = "detected %@";
+"不到 0.1 秒" = "< 0.1 s";
+"%@ 秒" = "%@ s";
+
+/* DocumentView.swift */
+"正在识别第 %lld / %lld 页" = "Recognizing page %lld of %lld…";
+"正在识别" = "Recognizing…";
+"认了 %lld 页就停了，共 %lld 页" = "Stopped: %lld of %lld recognized";
+"出错了" = "Something went wrong";
+"%lld 页" = "%lld pages";
+"看法" = "View";
+"整页给读和复制，逐行标出可能认错的（⌘1、⌘2）" = "Read and copy the whole page, or go line by line to see what may be misrecognized (⌘1, ⌘2)";
+"隐藏原图上的识别框（⇧⌘B）" = "Hide text boxes on the image (⇧⌘B)";
+"显示原图上的识别框（⇧⌘B）" = "Show text boxes on the image (⇧⌘B)";
+"停止识别（⌘.）" = "Stop recognizing (⌘.)";
+"重新识别（⌘R）" = "Recognize again (⌘R)";
+"复制全文（⇧⌘C）" = "Copy all text (⇧⌘C)";
+"导出" = "Export";
+"导出…" = "Export…";
+"这一页认不了" = "Couldn't recognize this page";
+"识别详情" = "Recognition Details";
+"识别详情：这一页怎么认的、判定插件做了什么" = "Recognition details: how this page was recognized and what the judgment plugins did";
+"这一页怎么认的" = "How This Page Was Recognized";
+
+/* TextPane.swift */
+"这一页没认出字" = "No text found on this page";
+"可以在左边的图上框一块，单独认那一块。" = "Drag a box on the image at left to recognize just that area.";
+"正在识别这一页" = "Recognizing this page…";
+"还没认到这一页，正在认第 %lld 页" = "Not there yet — recognizing page %lld…";
+"这一页还没认" = "This page hasn't been recognized yet";
+"识别在前面停下了。" = "Recognition stopped before this page.";
+"二维码 / 条码" = "QR Codes and Barcodes";
+"复制这一行" = "Copy Line";
+"可能认错 · %@" = "May be misrecognized · %@";
+"%@ 看过，没问题" = "Checked by %@: no problems";
+"系统没把握" = "Low confidence";
+"%@ 认为认错了（约 %lld%%）" = "Flagged by %@ (about %lld%%)";
+"多半是公章或签名" = "Probably a stamp or signature";
+
+/* RootView.swift */
+"打不开" = "Couldn't Open";
+"知道了" = "OK";
+"照片出了点事" = "Something Went Wrong with Photos";
+"把图里的字拾出来" = "Pick out the text in images";
+"打开图片或 PDF，认出的字能复制、能导出。\n也可以把文件拖进来，或按 ⌘V 粘贴截图。" = "Open an image or PDF, then copy or export the recognized text.\nYou can also drag files here, or press ⌘V to paste a screenshot.";
+"文件" = "Files";
+"从列表里移除" = "Remove from List";
+"照片图库" = "Photos Library";
+
+/* PageCanvas.swift */
+"识别框里的字" = "Recognize This Area";
+"框里认出的字" = "Text in This Area";
+"这一块没认出字" = "No text found in this area";
+"复制" = "Copy";
+
+/* DocumentModel.swift */
+"纯文字…" = "Plain Text…";
+"JSON（带每行位置）…" = "JSON (with Line Positions)…";
+
+/* PhotosView.swift */
+"拾字看不到你的照片" = "Shizi Can’t See Your Photos";
+"到「系统设置 › 隐私与安全性 › 照片」里打开「拾字」。" = "Turn on Shizi in System Settings › Privacy & Security › Photos.";
+"打开系统设置" = "Open System Settings";
+"按字找照片" = "Find Photos by Text";
+"拾字认出照片里的字，以后按字就找得到。\n照片不复制、不上传，认出的字只存在这台 Mac 上。" = "Shizi recognizes the text in your photos so you can find them by text later.\nPhotos aren’t copied or uploaded, and the recognized text stays on this Mac.";
+"允许访问照片…" = "Allow Access to Photos…";
+"新建相簿" = "New Album";
+"相簿名" = "Album name";
+"新建" = "Create";
+"把这 %lld 张放进一个新相簿。照片不复制，原来在哪还在哪。" = "Photos going into the new album: %lld. They aren’t copied and stay where they are.";
+"打不开这张照片" = "Can’t Open This Photo";
+"再试一次" = "Try Again";
+"正在取这张照片……" = "Getting this photo…";
+"原图在 iCloud 上的要先下载，头一张可能要等一两分钟" = "Originals stored in iCloud are downloaded first; the first one may take a minute or two";
+"第 %lld / %lld 张" = "%lld of %lld";
+"上一张" = "Previous Photo";
+"上一张（←）" = "Previous photo (←)";
+"下一张" = "Next Photo";
+"下一张（→）" = "Next photo (→)";
+"这个相簿里没有照片" = "No Photos in This Album";
+"拾字只认照片，视频不认。" = "Shizi recognizes photos only, not videos.";
+"正在停……" = "Stopping…";
+"正在分类：%lld / %lld 张" = "Classifying: %lld of %lld";
+"加进相簿" = "Add to Album";
+"新建相簿…" = "New Album…";
+"先选几张照片" = "Select some photos first";
+"把选中的 %lld 张加进相簿（照片不复制）" = "Add the selected photos (%lld) to an album; photos aren’t copied";
+"正在认另一个相簿，认完再来" = "Another album is being recognized; try again when it’s done";
+"这个相簿里的照片都认过了" = "All photos in this album have been recognized";
+"认这个相簿里还没认过的 %lld 张（⌘R）" = "Recognize %lld remaining in this album (⌘R)";
+"停止分类" = "Stop Classifying";
+"给这个相簿的照片分类：看认出的字（只发字），或者看画面（发缩小的照片）" = "Classify this album’s photos by recognized text (only the text is sent) or by image (shrunk copies are sent)";
+"打开" = "Open";
+"认过的照片里没有「%@」" = "No Results for “%@”";
+"拾字认过 %lld 张照片，没认过的搜不到。\n要搜更多，先在相簿里点「识别」。" = "Photos recognized so far: %lld. Photos that haven’t been recognized can’t be found.\nTo search more, click Recognize in an album first.";
+"排着等从 iCloud 下载原图来认" = "Waiting to download the original from iCloud";
+"认过，有字" = "Recognized, has text";
+"认过，没有字" = "Recognized, no text";
+"原图在 iCloud 上，还没认" = "The original is in iCloud; not recognized yet";
+"没认成：%@" = "Couldn’t recognize: %@";
+"还没认" = "Not recognized yet";
+"照片改过，要重新认" = "The photo was edited and needs to be recognized again";
+
+/* PhotosModel.swift */
+"照片库打不开：%@" = "Can’t open Shizi’s photo index: %@";
+"，头一张可能要等一两分钟" = " (the first one may take a minute or two)";
+"正在从 iCloud 下载原图来认：第 %lld / %lld 张%@" = "Downloading originals from iCloud: %lld of %lld%@";
+"正在识别：%lld / %lld 张" = "Recognizing: %lld of %lld";
+"%lld 张，都还没认" = "%lld total, none recognized yet";
+"认过 %lld 张（%lld 张有字）" = "%lld recognized (%lld with text)";
+"%lld 张原图在 iCloud 上没下下来" = "%lld not downloaded from iCloud";
+"%lld 张出错" = "%lld failed";
+"%lld 张还没认" = "%lld not recognized yet";
+"%lld 张：%@" = "%lld total: %@";
+"认过的 %lld 张照片里，带「%@」的至少 %lld 张，只列最新的 %lld 张" = "Found “%2$@” in at least %3$lld of %1$lld recognized photos; showing the newest %4$lld";
+"认过的 %lld 张照片里，带「%@」的有 %lld 张" = "Found “%2$@” in %3$lld of %1$lld recognized photos";
+"系统没说原因" = "the system didn’t say why";
+"原图在 iCloud 上，没下下来：%@" = "The original is in iCloud and couldn’t be downloaded: %@";
+"原图在 iCloud 上，设置里关了下载原图（或这台 Mac 剩余空间不到 3 GB）。" = "The original is in iCloud, and downloading originals is turned off in Settings (or this Mac has less than 3 GB free).";
+"等了 %lld 秒原图还没从 iCloud 下下来，过一会儿再试。" = "The original didn’t download from iCloud within %lld seconds. Try again in a while.";
+"照片 %@" = "Photo %@";
+"相簿要有个名字。" = "The album needs a name.";
+"没加进相簿：%@" = "Couldn’t add to the album: %@";
+
+/* PhotoLibrary.swift */
+"照片图库里找不到这张了" = "This photo is no longer in the Photos library";
+"没拿到图" = "Couldn’t get the image";
+"取图被取消了" = "Getting the image was canceled";
+"图解不开" = "Couldn’t decode the image";
+"照片图库里找不到这几张了" = "These photos are no longer in the Photos library";
+"这个相簿找不到了，或者不能往里加" = "This album no longer exists, or photos can’t be added to it";
+"照片图库没接受" = "The Photos library didn’t accept the change";
+"网络出错，连不上 iCloud" = "Network error, can’t reach iCloud";
+"这台 Mac 空间不够" = "Not enough space on this Mac";
+"被打断了（临时的，下次再试）" = "Interrupted (temporary; try again later)";
+"照片图库里缺这张的原图" = "The Photos library is missing this photo’s original";
+"取消了" = "Canceled";
+"%@（%@ %lld）" = "%@ (%@ %lld)";
+
+/* PhotoClassify.swift */
+"没有字" = "No Text";
+"还没有能分类的判定插件：在「设置 › 判定插件」里改一个插件，打开「分类照片」。" = "No judgment plugin can classify photos yet. In Settings › Judgment Plugins, edit a plugin and turn on “Classify photos”.";
+"插件没说原因" = "the plugin didn’t say why";
+"连着 %lld 张没分成，先停了：%@" = "Stopped after %lld photos in a row couldn’t be classified: %@";
+"有 %lld 张没分成，下次分类时再问：%@" = "%lld couldn’t be classified and will be retried next time you classify: %@";
+"本机取不到这张的预览图" = "No preview of this photo is available on this Mac";
+
+/* PhotoBatch.swift */
+"从 iCloud 下载原图没成：%@" = "Couldn’t download the original from iCloud: %@";
+"原图在 iCloud 上，下载原图关着" = "The original is in iCloud, and downloading originals is turned off";
+"等了 %lld 秒原图还没从 iCloud 下下来，下次再认" = "The original didn’t download from iCloud within %lld seconds; it will be recognized next time";
+"等了 %lld 秒还没从照片图库取到图" = "Couldn’t get the image from the Photos library within %lld seconds";
+"拾字在认照片里的字" = "Shizi is recognizing text in photos";
+"原图在 iCloud 上，还没下载" = "The original is in iCloud and hasn’t been downloaded yet";
+"前面连着 %lld 张从 iCloud 下载都没成，这次先不下了" = "The previous %lld downloads from iCloud all failed, so downloads are skipped this time";
+"原图在 iCloud 上，这台 Mac 剩余空间不到 3 GB，没下载" = "The original is in iCloud, but this Mac has less than 3 GB free, so it wasn’t downloaded";
+
+/* ClassifySheet.swift */
+"还没有能分类的判定插件。在「设置 › 判定插件」里改一个插件（比如 Clef），打开「分类照片」。" = "No judgment plugin can classify photos yet. In Settings › Judgment Plugins, edit a plugin (such as Clef) and turn on “Classify photos”.";
+"打开设置" = "Open Settings";
+"看什么" = "Classify by";
+"看认出的字" = "By Text";
+"看画面" = "By Image";
+"分法" = "Method";
+"按类别分" = "By Category";
+"按一句条件找" = "By Condition";
+"一行一个「名称：判断标准」，1 到 8 个；一张可以同时是几类。" = "One per line as “Name: criteria”, 1 to 8. A photo can be in more than one category.";
+"用默认的" = "Use Defaults";
+"要找什么" = "What to find";
+"比如：照片里有猫" = "For example: there’s a cat in the photo";
+"比如：包含付款期限的约定" = "For example: mentions a payment deadline";
+"每张照片说符合还是不符合，拿不准的算待确认。" = "Each photo is marked as matching or not; uncertain ones go under Unsure.";
+"开始分类" = "Classify";
+"分这个相簿的 %lld 张：把每张照片缩到 %lld 像素发到 %@（一张几十 KB），不下载 iCloud 上的原图。" = "Photos to classify in this album: %lld. Each is shrunk to %lld pixels and sent to %@ (a few dozen KB each); originals in iCloud aren’t downloaded.";
+"这个相簿里还没有认出字的照片，先点「识别」；或者换成「看画面」。" = "No photos in this album have recognized text yet. Click Recognize first, or switch to By Image.";
+"分这个相簿里认出字的 %lld 张：只把认出的字发到 %@，不发照片。" = "Photos with recognized text in this album: %lld. Only the recognized text is sent to %@, not the photos.";
+"还有 %lld 张没认，先点「识别」才分得到。" = " Not recognized yet: %lld. Click Recognize first to include them.";
+"全部" = "All";
+"还有 %lld 张没分" = "%lld not classified yet";
+"这几张是分过类以后才加进来的（或者照片改过），也可能上次没分成；再点「分类」只问它们" = "These were added (or edited) after the last classification, or couldn’t be classified last time. Click Classify again to classify only these.";
+"这几张是分过类以后才认出字的（或者字变了），也可能上次没分成；再点「分类」只问它们" = "These were recognized (or their text changed) after the last classification, or couldn’t be classified last time. Click Classify again to classify only these.";
+"存为相簿…" = "Save as Album…";
+"拾字 · %@" = "Shizi · %@";
+"把「%@」这 %lld 张放进一个新相簿（照片不复制）" = "Put the photos in “%@” (%lld) into a new album; photos aren’t copied";
+
+/* ClassifySheet.swift：识别核心定的固定标签，只在显示时翻 */
+"待确认" = "Unsure";
+"符合条件" = "Matches";
+"不符合条件" = "Doesn’t Match";
+
+/* 一个中文、两个英文：单独的键（代码里 defaultValue 是中文原文） */
+"识别（设置）" = "Recognition";
+"照片（单张）" = "Photo";

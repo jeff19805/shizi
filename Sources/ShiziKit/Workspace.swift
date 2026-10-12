@@ -92,7 +92,7 @@ public final class Workspace {
 			do {
 				add(try DocumentModel(url: url, recognizer: recognizer))
 			} catch {
-				failed.append("\(url.lastPathComponent)：\(error)")
+				failed.append(String(localized: "\(url.lastPathComponent)：\(String(describing: error))"))
 			}
 		}
 		if !failed.isEmpty { problem = failed.joined(separator: "\n") }
@@ -144,13 +144,15 @@ public final class Workspace {
 			return true
 		}
 		let stamp = DateFormatter.localizedString(from: Date(), dateStyle: .none, timeStyle: .short)
-		for (type, label) in [(NSPasteboard.PasteboardType.pdf, "粘贴的 PDF"), (.png, "粘贴的截图"), (.tiff, "粘贴的截图")] {
+		for (type, label) in [
+			(NSPasteboard.PasteboardType.pdf, String(localized: "粘贴的 PDF")), (.png, String(localized: "粘贴的截图")), (.tiff, String(localized: "粘贴的截图")),
+		] {
 			guard let data = pasteboard.data(forType: type) else { continue }
 			do {
 				add(try DocumentModel(data: data, name: "\(label) \(stamp)", recognizer: recognizer))
 				return true
 			} catch {
-				problem = "剪贴板里的图读不了：\(error)"
+				problem = String(localized: "剪贴板里的图读不了：\(String(describing: error))")
 				return false
 			}
 		}

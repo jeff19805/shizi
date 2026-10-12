@@ -151,7 +151,7 @@ struct PhotoDetailView: View {
 	}
 
 	var position: String? {
-		photos.position.map { "第 \($0.index + 1) / \($0.count) 张" }
+		photos.position.map { String(localized: "第 \($0.index + 1) / \($0.count) 张") }
 	}
 }
 
@@ -202,7 +202,7 @@ struct AlbumView: View {
 				}
 			}
 		}
-		.navigationTitle(photos.isSearching ? "按字找照片" : photos.album?.title ?? "照片")
+		.navigationTitle(photos.isSearching ? String(localized: "按字找照片") : photos.album?.title ?? String(localized: "照片"))
 		.navigationSubtitle(subtitle)
 		.toolbar { AlbumToolbar(photos: photos, newAlbum: askNewAlbum, classify: { classifying = true }) }
 		.sheet(isPresented: $classifying) { ClassifySheet(photos: photos) }
@@ -219,7 +219,7 @@ struct AlbumView: View {
 		if photos.isSearching { return photos.searchSubtitle }
 		// 在认字时说认字的进度；只在分类时说分类的进度。
 		if let c = photos.classifyRun, photos.run == nil {
-			return c.stopping ? "正在停……" : "正在分类：\(c.done) / \(c.total) 张"
+			return c.stopping ? String(localized: "正在停……") : String(localized: "正在分类：\(c.done) / \(c.total) 张")
 		}
 		return photos.subtitle
 	}
@@ -250,7 +250,7 @@ struct AddToAlbumMenu: View {
 			if !photos.addableAlbums.isEmpty { Divider() }
 			Button("新建相簿…") { newAlbum(items) }
 		}
-		.help(items.isEmpty ? "先选几张照片" : "把选中的 \(items.count) 张加进相簿（照片不复制）")
+		.help(items.isEmpty ? String(localized: "先选几张照片") : String(localized: "把选中的 \(items.count) 张加进相簿（照片不复制）"))
 		.disabled(items.isEmpty)
 	}
 }
@@ -283,7 +283,8 @@ struct AlbumToolbar: ToolbarContent {
 					.labelStyle(.titleAndIcon)
 					.help(
 						photos.run != nil
-							? "正在认另一个相簿，认完再来" : todo == 0 ? "这个相簿里的照片都认过了" : "认这个相簿里还没认过的 \(todo) 张（⌘R）")
+							? String(localized: "正在认另一个相簿，认完再来")
+							: todo == 0 ? String(localized: "这个相簿里的照片都认过了") : String(localized: "认这个相簿里还没认过的 \(todo) 张（⌘R）"))
 					.disabled(photos.run != nil || todo == 0)
 			}
 			// 分类：在分的时候是进度和「停止分类」。
@@ -459,13 +460,13 @@ struct PhotoHitRow: View {
 				.clipShape(RoundedRectangle(cornerRadius: 6))
 			VStack(alignment: .leading, spacing: 4) {
 				HStack(spacing: 8) {
-					Text(hit.record.name ?? "照片")
+					Text(hit.record.name ?? String(localized: "照片（单张）", defaultValue: "照片"))
 						.fontWeight(.medium)
 						.lineLimit(1)
 						.truncationMode(.middle)
 					Spacer(minLength: 8)
 					if let taken = hit.record.taken {
-						// 写法跟 photos_search 回的一样；界面全是中文，不跟着系统的地区格式变成英文月份。
+						// 写法跟 photos_search 回的一样，只有数字：中文、英文界面都这么写，不跟着系统的地区格式变。
 						Text(Self.day.string(from: taken))
 							.font(.caption)
 							.monospacedDigit()
@@ -532,13 +533,15 @@ struct PhotoBadge: View {
 extension PhotosModel {
 	/// 悬停在格子上看到的那句：认没认过、有没有字，没认成的说为什么。
 	func describe(_ asset: PhotoAsset) -> String {
-		if isWaitingForDownload(asset) { return "排着等从 iCloud 下载原图来认" }
+		if isWaitingForDownload(asset) { return String(localized: "排着等从 iCloud 下载原图来认") }
 		switch status(of: asset) {
-		case .text?: return "认过，有字"
-		case .empty?: return "认过，没有字"
-		case .icloud?: return problem(of: asset) ?? "原图在 iCloud 上，还没认"
-		case .failed?: return "没认成：\(problem(of: asset) ?? "出错了")"
-		case nil: return briefs[asset.id] == nil ? "还没认" : "照片改过，要重新认"
+		case .text?: return String(localized: "认过，有字")
+		case .empty?: return String(localized: "认过，没有字")
+		case .icloud?: return problem(of: asset) ?? String(localized: "原图在 iCloud 上，还没认")
+		case .failed?:
+			let reason = problem(of: asset) ?? String(localized: "出错了")
+			return String(localized: "没认成：\(reason)")
+		case nil: return briefs[asset.id] == nil ? String(localized: "还没认") : String(localized: "照片改过，要重新认")
 		}
 	}
 }
