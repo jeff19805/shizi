@@ -22,6 +22,37 @@ import UniformTypeIdentifiers
 
 let env = ProcessInfo.processInfo.environment
 
+/// 报给核心的话（出错、测连接的结果）用哪种语言：跟核心一样。核心启动插件时用环境变量 OCR_PLUGIN_LANGUAGE（en 或 zh-Hans）告诉它；
+/// 没传（单独跑插件、老版本的核心）才照系统的语言顺序自己定。光靠自己定会跟核心对不上：比如拾字设成中文、配置里却是仓库里单独编的插件，
+/// 或者跑测试时核心找不到语言包（出中文）、插件在仓库的 .build 里找得到（出英文）。
+/// 插件不依赖核心，找语言包这段是 OCRCore/Texts.swift 的一份拷贝，改了两边一起改：英文拿 en.lproj 这个文件夹当包取字，中文不查表。
+/// 发给判定服务的题目不走这里：题目的说法是照中文试过、定下来的。
+enum Texts {
+	static let english: Bundle? = {
+		let language = env["OCR_PLUGIN_LANGUAGE"] ?? Bundle.preferredLocalizations(from: ["en", "zh-Hans", "zh-Hant"], forPreferences: nil).first
+		guard language == "en" else { return nil }
+		// 找语言包的顺序跟核心一样：App 里的；仓库里的 scripts/app（.build 里复制的那份可能旧了）；程序旁边的。
+		let table = "en.lproj/Localizable.strings"
+		func has(_ dir: URL) -> Bool { FileManager.default.fileExists(atPath: dir.appendingPathComponent(table).path) }
+		func english(_ dir: URL) -> Bundle? { Bundle(path: dir.appendingPathComponent("en.lproj").path) }
+		if Bundle.main.bundleURL.pathExtension == "app", let resources = Bundle.main.resourceURL, has(resources) { return english(resources) }
+		var dir = Bundle.main.executableURL?.resolvingSymlinksInPath().deletingLastPathComponent()
+		for _ in 0..<5 {
+			guard let d = dir else { break }
+			let packs = d.appendingPathComponent("scripts/app", isDirectory: true)
+			if has(packs) { return english(packs) }
+			dir = d.deletingLastPathComponent()
+		}
+		if let resources = Bundle.main.resourceURL, has(resources) { return english(resources) }
+		return nil
+	}()
+
+	static func text(_ value: String.LocalizationValue) -> String {
+		if let english { return String(localized: value, bundle: english) }
+		return String(localized: value, table: "Untranslated", bundle: .main)
+	}
+}
+
 struct PluginError: Error {
 	var message: String
 	/// 服务回的 HTTP 状态码；连不上时是 nil。
@@ -33,7 +64,10 @@ struct PluginError: Error {
 }
 
 func reply(_ obj: [String: Any]) -> Never {
-	let data = (try? JSONSerialization.data(withJSONObject: obj)) ?? Data("{\"error\":\"回复没法写成 JSON\"}".utf8)
+	// 写不成 JSON 时回一句固定的出错；这句也交给 JSONSerialization 写，翻成英文后带什么符号都不会把 JSON 写坏。
+	let data =
+		(try? JSONSerialization.data(withJSONObject: obj))
+		?? (try? JSONSerialization.data(withJSONObject: ["error": Texts.text("回复没法写成 JSON")])) ?? Data()
 	FileHandle.standardOutput.write(data)
 	FileHandle.standardOutput.write(Data([0x0A]))
 	exit(0)
@@ -45,7 +79,7 @@ func fail(_ message: String) -> Never { reply(["error": message]) }
 
 guard let request = (try? JSONSerialization.jsonObject(with: FileHandle.standardInput.readDataToEndOfFile())) as? [String: Any],
 	let hook = request["hook"] as? String
-else { fail("输入不是插件约定的 JSON") }
+else { fail(Texts.text("输入不是插件约定的 JSON")) }
 let input = request["input"] as? [String: Any] ?? [:]
 let name = env["OCR_PLUGIN_NAME"] ?? ""
 
@@ -61,10 +95,12 @@ func normalizedBase(_ raw: String?) -> String? {
 }
 
 guard let base = normalizedBase(env["SYSTEMONE_URL"]) else {
-	fail(env["SYSTEMONE_URL"] == nil ? "没配 SYSTEMONE_URL（判定服务的地址）" : "SYSTEMONE_URL 不对：要 http:// 或 https:// 开头，不带用户名密码")
+	fail(
+		env["SYSTEMONE_URL"] == nil
+			? Texts.text("没配 SYSTEMONE_URL（判定服务的地址）") : Texts.text("SYSTEMONE_URL 不对：要 http:// 或 https:// 开头，不带用户名密码"))
 }
 guard let model = env["SYSTEMONE_MODEL"]?.trimmingCharacters(in: .whitespaces), !model.isEmpty else {
-	fail("没配 SYSTEMONE_MODEL（模型名）")
+	fail(Texts.text("没配 SYSTEMONE_MODEL（模型名）"))
 }
 
 /// 先找服务 shizi 下面的；0.0.35 及以前存在 mac-ocr-mcp 下面，没有再找它。
@@ -90,7 +126,8 @@ func keychainKey(service: String) -> String? {
 func requireKey() -> String {
 	if let k = env["SYSTEMONE_KEY"], !k.isEmpty { return k }
 	if let k = keychainKey() { return k }
-	fail("没有密钥：在拾字的设置里填，或者 security add-generic-password -s shizi -a \(name.isEmpty ? "<插件的 name>" : name) -w")
+	let account = name.isEmpty ? Texts.text("<插件的 name>") : name
+	fail(Texts.text("没有密钥：在拾字的设置里填，或者 security add-generic-password -s shizi -a \(account) -w"))
 }
 
 // MARK: 发请求
@@ -98,11 +135,11 @@ func requireKey() -> String {
 /// 服务回的状态码说成固定的几种话，不带服务的原话（里面可能有请求内容）。
 @Sendable func statusMessage(_ status: Int) -> String {
 	switch status {
-	case 401, 403: return "密钥不对或没有权限（服务回 \(status)）"
-	case 404: return "地址不对：服务上没有 /v1/systemone（404）"
-	case 400, 422: return "服务不认这个请求（\(status)）：多半是模型名不对，或者这个服务不收图"
-	case 500...599: return "服务出错了（\(status)）"
-	default: return "服务回 \(status)"
+	case 401, 403: return Texts.text("密钥不对或没有权限（服务回 \(status)）")
+	case 404: return Texts.text("地址不对：服务上没有 /v1/systemone（404）")
+	case 400, 422: return Texts.text("服务不认这个请求（\(status)）：多半是模型名不对，或者这个服务不收图")
+	case 500...599: return Texts.text("服务出错了（\(status)）")
+	default: return Texts.text("服务回 \(status)")
 	}
 }
 
@@ -111,7 +148,7 @@ func requireKey() -> String {
 	var payload: Data?
 	if let body {
 		guard let data = try? JSONSerialization.data(withJSONObject: body, options: [.withoutEscapingSlashes]) else {
-			return .failure(PluginError("请求没法写成 JSON"))
+			return .failure(PluginError(Texts.text("请求没法写成 JSON")))
 		}
 		payload = data
 	}
@@ -126,12 +163,12 @@ func requireKey() -> String {
 			}
 			guard status == 200 else { return .failure(PluginError(statusMessage(status), status: status)) }
 			guard let obj = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else {
-				return .failure(PluginError("服务回的不是 JSON", status: status))
+				return .failure(PluginError(Texts.text("服务回的不是 JSON"), status: status))
 			}
 			return .success(obj)
 		}
 	}
-	return .failure(PluginError("服务一直忙（429）", status: 429))
+	return .failure(PluginError(Texts.text("服务一直忙（429）"), status: 429))
 }
 
 /// 调 /usr/bin/curl：请求体从标准输入给，状态码追加在输出最后一行。
@@ -152,7 +189,7 @@ func requireKey() -> String {
 	p.standardInput = input
 	p.standardOutput = output
 	p.standardError = errors
-	do { try p.run() } catch { return .failure(PluginError("启动不了 /usr/bin/curl")) }
+	do { try p.run() } catch { return .failure(PluginError(Texts.text("启动不了 /usr/bin/curl"))) }
 	var out = Data()
 	let readers = DispatchGroup()
 	readers.enter()
@@ -171,15 +208,17 @@ func requireKey() -> String {
 	readers.wait()
 	guard p.terminationStatus == 0 else {
 		switch p.terminationStatus {
-		case 6: return .failure(PluginError("找不到这个地址（\(base)）"))
-		case 7: return .failure(PluginError("连不上 \(base)：服务没开，或者端口不对"))
-		case 28: return .failure(PluginError("\(base) 20 秒没回"))
-		case 35, 51, 58, 60: return .failure(PluginError("跟 \(base) 的 HTTPS 握手没成"))
-		default: return .failure(PluginError("连不上 \(base)（curl 退出码 \(p.terminationStatus)）"))
+		case 6: return .failure(PluginError(Texts.text("找不到这个地址（\(base)）")))
+		case 7: return .failure(PluginError(Texts.text("连不上 \(base)：服务没开，或者端口不对")))
+		case 28: return .failure(PluginError(Texts.text("\(base) 20 秒没回")))
+		case 35, 51, 58, 60: return .failure(PluginError(Texts.text("跟 \(base) 的 HTTPS 握手没成")))
+		default:
+			let code = "\(p.terminationStatus)"
+			return .failure(PluginError(Texts.text("连不上 \(base)（curl 退出码 \(code)）")))
 		}
 	}
 	guard let nl = out.lastIndex(of: 0x0A), let status = Int(String(decoding: out[(nl + 1)...], as: UTF8.self)) else {
-		return .failure(PluginError("没拿到服务的状态码"))
+		return .failure(PluginError(Texts.text("没拿到服务的状态码")))
 	}
 	return .success((status, Data(out[..<nl])))
 }
@@ -195,7 +234,7 @@ struct Answers {
 	var body: [String: Any] = ["model": model, "state": state, "questions": questions]
 	if !images.isEmpty { body["images"] = images }
 	return send("POST", "/v1/systemone", body: body, key: key).flatMap { obj in
-		guard let answers = obj["answers"] as? [String: Any] else { return .failure(PluginError("回复里没有 answers")) }
+		guard let answers = obj["answers"] as? [String: Any] else { return .failure(PluginError(Texts.text("回复里没有 answers"))) }
 		return .success(Answers(answers: answers, model: obj["model"] as? String))
 	}
 }
@@ -262,7 +301,7 @@ if hook == "describe" {
 	}
 	let elapsed = Int(Date().timeIntervalSince(started) * 1000)
 	guard let two = noul(answered.answers, "two"), let five = noul(answered.answers, "five"), two >= 0.5, five < 0.5 else {
-		fail("服务回了话，但没答对测试题：检查模型名（SYSTEMONE_MODEL）")
+		fail(Texts.text("服务回了话，但没答对测试题：检查模型名（SYSTEMONE_MODEL）"))
 	}
 	var out: [String: Any] = ["url": base, "model": model, "elapsedMs": elapsed]
 	if let m = answered.model { out["serverModel"] = m }
@@ -272,10 +311,10 @@ if hook == "describe" {
 	switch ask(state: "看附带的图片。", questions: square, images: [probeImage() ?? ""], key: key) {
 	case .success(let a):
 		out["images"] = "收"
-		if (noul(a.answers, "square") ?? 0) < 0.5 { warnings.append("收图，但看图的测试题没答对：route 给的信号可能不准") }
+		if (noul(a.answers, "square") ?? 0) < 0.5 { warnings.append(Texts.text("收图，但看图的测试题没答对：route 给的信号可能不准")) }
 	case .failure(let e) where e.status == 400 || e.status == 422:
 		out["images"] = "不收"
-		if hooks.contains("route") { warnings.append("这个服务不收图，route 用不了：配置里这个插件的 hooks 只留 review") }
+		if hooks.contains("route") { warnings.append(Texts.text("这个服务不收图，route 用不了：配置里这个插件的 hooks 只留 review")) }
 	case .failure(let e):
 		fail(e.message)
 	}
@@ -297,7 +336,7 @@ let routeQuestions: [String: Any] = [
 ]
 
 if hook == "route" {
-	guard let image = imageDataURL(input["image"] as? [String: Any]) else { fail("route 的输入里没有能用的图") }
+	guard let image = imageDataURL(input["image"] as? [String: Any]) else { fail(Texts.text("route 的输入里没有能用的图")) }
 	switch ask(state: "看附带的图片。它接下来要交给文字识别程序去认字，先回答几个关于图片版面的问题。", questions: routeQuestions, images: [image], key: key) {
 	case .success(let a):
 		var signals: [String: Double] = [:]
@@ -373,11 +412,11 @@ if hook == "classify" {
 		guard let id = q["id"] as? String, let criteria = q["criteria"] as? String else { return nil }
 		return (id, criteria)
 	}
-	guard !questions.isEmpty else { fail("分类没给题") }
+	guard !questions.isEmpty else { fail(Texts.text("分类没给题")) }
 	// 给了图就按画面分（说法照给图片打标签的写法），不然按字分。
 	let image = imageDataURL(input["image"] as? [String: Any])
 	let text = input["text"] as? String ?? ""
-	guard image != nil || !text.isEmpty else { fail("分类没给字也没给图") }
+	guard image != nil || !text.isEmpty else { fail(Texts.text("分类没给字也没给图")) }
 	var asks: [String: Any] = [:]
 	for q in questions {
 		asks[q.id] =
@@ -403,4 +442,4 @@ if hook == "classify" {
 	}
 }
 
-fail("不认识的口子：\(hook)")
+fail(Texts.text("不认识的口子：\(hook)"))

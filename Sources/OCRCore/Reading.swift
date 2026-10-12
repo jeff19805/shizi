@@ -161,7 +161,11 @@ public func readingLayout(_ lines: [OCRLine], width: Int, height: Int, rules: [R
 func placeName(_ cx: Double, _ cy: Double) -> String {
 	let col = cx < 1.0 / 3 ? 0 : cx > 2.0 / 3 ? 2 : 1
 	let row = cy < 1.0 / 3 ? 0 : cy > 2.0 / 3 ? 2 : 1
-	return [["左上", "上方", "右上"], ["左侧", "中间", "右侧"], ["左下", "下方", "右下"]][row][col]
+	return [
+		[Texts.text("左上"), Texts.text("上方"), Texts.text("右上")],
+		[Texts.text("左侧"), Texts.text("中间"), Texts.text("右侧")],
+		[Texts.text("左下"), Texts.text("下方"), Texts.text("右下")],
+	][row][col]
 }
 
 /// `markers`：分栏页面每段开头写不写〔中间〕这类位置标记。给只看文字的模型要写；给人看、导出不写。

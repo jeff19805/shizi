@@ -48,7 +48,7 @@ public final class MCPServer {
 		return { [send] done, total in
 			send(jsonString([
 				"jsonrpc": "2.0", "method": "notifications/progress",
-				"params": ["progressToken": token, "progress": done, "total": total, "message": "认完 \(done) / \(total) 页"],
+				"params": ["progressToken": token, "progress": done, "total": total, "message": Texts.text("认完 \(done) / \(total) 页")],
 			]))
 		}
 	}
@@ -90,8 +90,8 @@ public final class MCPServer {
 		return [
 			"protocolVersion": version,
 			"capabilities": ["tools": ["listChanged": false]],
-			"serverInfo": ["name": "shizi", "title": "拾字：Mac 自带文字识别", "version": OCRVersion.current],
-			"instructions": "用 macOS 自带的文字识别读图片或 PDF 里的字，全在本机。要认图里的字就调 ocr_image；页数多、要整份全文就调 ocr_to_file（写成文件，回复只给路径和摘要）；想知道这台机器能认哪些、插件通不通，调 ocr_status。",
+			"serverInfo": ["name": "shizi", "title": Texts.text("拾字：Mac 自带文字识别"), "version": OCRVersion.current],
+			"instructions": Texts.text("用 macOS 自带的文字识别读图片或 PDF 里的字，全在本机。要认图里的字就调 ocr_image；页数多、要整份全文就调 ocr_to_file（写成文件，回复只给路径和摘要）；想知道这台机器能认哪些、插件通不通，调 ocr_status。"),
 		]
 	}
 

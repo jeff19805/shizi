@@ -398,3 +398,226 @@
 /* 一个中文、两个英文：单独的键（代码里 defaultValue 是中文原文） */
 "识别（设置）" = "Recognition";
 "照片（单张）" = "Photo";
+
+/* Tools.swift */
+"用 macOS 自带的文字识别读图片（PNG、JPEG、HEIC、TIFF 等）或 PDF 里的字，全在本机、不联网。\n自动处理：任意角度的旋转（倒着的也行）；大图里的小字（自动切块细认，接缝处切开的长行会拼回去）；表格、多栏、竖排（macOS 26 起走「认文档」，表格输出成 Markdown）；手机照片的方向标记。\n装了判定插件时还会：先看图决定怎么认、自动拉正拍歪的纸、复核可疑的行。没装插件时只在要认文档且纸明显歪了时才拉正，拍歪的照片可以传 rectify=on。\n认不了或认不准：表情符号（直接丢）、公式里的上下标、字高不到约 8 像素的字、印章那种沿弧线排的字、真手写（没测过）。\nPDF 里有文字（Word、浏览器导出的）时直接用它的字，一字不差、快得多，插图另外认；扫描件、扫描件上别的软件加的隐形文字层照常认图。\n可能认错的行会在结果末尾单独列出，正文里原样保留、没有删。\n一次回复有大小上限：多页 PDF 放不下时只给前几页，末尾写明没给的页接着用什么 pages 参数；要整份全文用 ocr_to_file。" = "Reads the text in images (PNG, JPEG, HEIC, TIFF, and more) or PDFs with macOS’s built-in text recognition, entirely on this Mac with no network access.\nHandled automatically: rotation at any angle (even upside down); small text in large images (split into tiles automatically for a closer look, and long lines cut at tile seams are joined back together); tables, multiple columns, and vertical text (from macOS 26 on, these go through document mode, and tables are output as Markdown); the orientation tag on phone photos.\nWith a judgment plugin installed, it also checks the image first to decide how to recognize it, automatically straightens pages photographed at an angle, and reviews suspicious lines. Without plugins, it straightens a page only when recognizing in document mode and the page is clearly tilted; for a photo taken at an angle, pass rectify=on.\nCan’t recognize, or recognizes poorly: emoji (dropped), superscripts and subscripts in formulas, text under about 8 pixels tall, text set along an arc as on seals, real handwriting (untested).\nWhen a PDF contains text (exported from Word or a browser), that text is used directly: exact and much faster, with illustrations recognized separately. Scans, and invisible text layers that other software added to scans, are recognized from the image as usual.\nLines that may be misrecognized are listed separately at the end of the result; they’re kept as is in the main text, not removed.\nEach reply has a size limit: when a multi-page PDF doesn’t fit, only the first pages are returned, and the end of the reply says which pages parameter to use for the rest; for the full text of the whole document, use ocr_to_file.";
+"跟 ocr_image 一样认图片或 PDF，但整份认完写成文件，回复里只给文件路径、页数、字数、用时和每页开头一句。\n适合页数多、要全文的文档：一次最多 100 页（认图时不带插件约 0.8 秒一页，带插件约 1.6 秒；PDF 自带文字的页几十毫秒一页），多的末尾写明接着用什么 pages。\n文件里每页的写法跟 ocr_image 的回复一样；detail=full 时另写一份同名的 .json。\n默认写到 ~/Library/Caches/shizi/results/（下次往那里写的时候，顺手清掉 7 天前的），要留着就用 outputPath 指定；不会覆盖已有的文件。" = "Recognizes an image or PDF like ocr_image, but recognizes the whole document and writes it to a file; the reply gives only the file path, page count, character count, time taken, and the first line of each page.\nMeant for long documents when you need the full text: up to 100 pages per call (recognizing from the image takes about 0.8 s per page without plugins and about 1.6 s with them; PDF pages with their own text take a few dozen milliseconds each); for more, the end of the reply says which pages value to use next.\nEach page in the file is written the same way as in an ocr_image reply; with detail=full, a .json with the same name is written too.\nFiles go to ~/Library/Caches/shizi/results/ by default (results there older than 7 days are cleared the next time something is written there); to keep a file, set outputPath. Existing files are never overwritten.";
+"在「拾字」认过的照片里按字找照片（照片图库里的截屏、拍的文件、票据这些）：回文件名、拍摄时间和字里那一段。\n只搜拾字认过的照片，不碰照片图库本身；没认过的照片搜不到，要先在拾字里打开「照片」认一下。" = "Finds photos by their text among the photos Shizi has recognized (screenshots, photographed documents, receipts, and the like in the Photos library): returns the file name, the date taken, and the matching part of the text.\nOnly searches photos Shizi has recognized and never touches the Photos library itself; photos that haven’t been recognized can’t be found, so open Photos in Shizi and recognize them first.";
+"图片或 PDF 的路径，可以用 ~" = "Path to the image or PDF; ~ works";
+"PDF 页码，如 \"1-3,5\"；默认从头起" = "PDF pages, such as \"1-3,5\"; starts from the first page by default";
+"auto（默认）自动选；lines 逐行识别；document 认文档（段落、表格、列表、竖排，要 macOS 26）" = "auto (default) chooses automatically; lines recognizes line by line; document uses document mode (paragraphs, tables, lists, vertical text; requires macOS 26)";
+"不给：照拾字设置里的「识别语言」（默认自动判断）。[\"chinese-first\"]：中文优先，汉字夹在字母、数字、算式里也认得准，整页几乎没有汉字或中文认不了的字时自动改回自动判断；[\"auto\"]：系统一行一行自己判断（中文行里字母数字多时汉字可能认成乱码）；[\"zh-Hans\", \"en-US\"]、[\"ja-JP\"] 这样：指定语言，只用第一个语言的模型（中日韩的会排到最前）" = "Omitted: follows the recognition language in Shizi’s settings (automatic by default). [\"chinese-first\"]: Chinese First, which reads Chinese characters accurately even among letters, digits, and formulas, and switches back to automatic when a page has almost no Chinese characters or has characters Chinese recognition can’t read; [\"auto\"]: the system decides line by line on its own (in Chinese lines with many letters and digits, the Chinese characters may come out garbled); a list such as [\"zh-Hans\", \"en-US\"] or [\"ja-JP\"]: sets the languages, and only the first language’s model is used (Chinese, Japanese, and Korean are moved to the front)";
+"只认图里这一块：[左, 上, 宽, 高]，0–1，左上角为原点；结果坐标仍相对整张图" = "Recognize only this area of the image: [left, top, width, height], from 0 to 1, with the origin at the top left; result coordinates stay relative to the whole image";
+"拉正拍歪的纸；默认 auto" = "Straighten tilted pages; auto by default";
+"大图小字切块细认；默认 auto" = "Split large images into tiles to read small text; auto by default";
+"找不找二维码 / 条码，默认找" = "Whether to look for QR codes / barcodes; on by default";
+"text（默认）只给文字；full 另附一块 JSON：每行位置、可信度、表格格子等（没有 quad 的行是正的，四角就是 box 的四角）" = "text (default) returns just the text; full adds a JSON block with each line’s position, confidence, table cells, and more (lines without a quad are upright, so their four corners are the corners of box)";
+"这次调不调判定插件，默认调（没配就没有）" = "Whether to call judgment plugins this time; on by default (has no effect if none are configured)";
+"PDF 里有文字时直接用，默认 true：Word、浏览器导出的 PDF 一字不差、快得多，里面的图片另外认；扫描件、别的软件加的隐形文字层、乱码的照样认图。false 就全部认图（mode=document 时也不用）" = "Use a PDF’s own text when it has one; true by default: PDFs exported from Word or a browser come out exact and much faster, and the images inside are recognized separately; scans, invisible text layers added by other software, and garbled text layers are still recognized from the image. false recognizes everything from the image (the text layer is also not used with mode=document)";
+"写到哪：以 .md 结尾的绝对路径（可以用 ~），或者一个已有的文件夹（在里面按「源文件名-时间」起名）；不给就写到缓存文件夹" = "Where to write: an absolute path ending in .md (~ works), or an existing folder (the file inside it is named \"source file name-time\"); if omitted, the file goes to the cache folder";
+"认图片或 PDF 里的字" = "Recognize Text in an Image or PDF";
+"认图片或 PDF 里的字，整份写成文件" = "Recognize Text in an Image or PDF and Write It All to a File";
+"要找的字，比如「发票」「Wi-Fi 密码」；照片里认出的字包含它就算" = "The text to look for, such as “invoice” or “Wi-Fi password”; a photo matches if the text recognized in it contains this";
+"最多回几张，默认 20，最多 50" = "Maximum number of photos to return; 20 by default, at most 50";
+"文字识别能力与插件状况" = "Text Recognition Capabilities and Plugin Status";
+"说明这台机器的系统版本、能不能认文档（表格、多栏、竖排）、支持哪些语言，以及配置了哪些判定插件、连不连得上。" = "Reports this Mac’s system version, whether document mode (tables, multiple columns, vertical text) is available, which languages are supported, and which judgment plugins are configured and whether they can be reached.";
+"# %@ 认出的字\n\n来源：%@　第 %@ 页（共 %lld 页）　拾字 %@　%@" = "# Recognized text from %@\n\nSource: %@ · pages %@ of %lld · Shizi %@ · %@";
+"认到一半出错（%@）；已经写下的 %lld 页在 %@" = "An error occurred partway through (%@); pages written so far: %lld, saved in %@";
+"不认识的参数 %@" = "Unknown parameter %@";
+"要给 query：要找的字" = "Missing query: the text to look for";
+"拾字还没认过照片：在拾字里打开「照片」，选一个相簿点「识别」以后才搜得到。" = "Shizi hasn’t recognized any photos yet. Open Photos in Shizi, choose an album, and click Recognize; after that, its photos can be searched.";
+"拾字认过的照片里，没有字里带「%@」的。" = "None of the photos Shizi has recognized have “%@” in their text.";
+"拾字认过的照片里，字里带「%@」的至少 %lld 张（新拍的在前）：" = "Photos Shizi has recognized with “%@” in their text: at least %lld (newest first):";
+"拾字认过的照片里，字里带「%@」的有 %lld 张（新拍的在前）：" = "Photos Shizi has recognized with “%@” in their text: %lld (newest first):";
+"拍摄时间不详" = "date taken unknown";
+"（没有文件名）" = "(no file name)";
+"%lld. %@　%@　%@" = "%lld. %@ · %@ · %@";
+"，最近一次 %@" = ", most recently at %@";
+"%lld 张原图在 iCloud 上" = "%lld with the original in iCloud";
+"，另有 %@，还没认" = "; not recognized yet: %@";
+"【拾字认过 %lld 张照片（%lld 张有字）%@；没认过的照片搜不到%@】" = "[Photos Shizi has recognized: %lld (%lld with text)%@; photos it hasn’t recognized can’t be found%@]";
+"要给 path：图片或 PDF 的路径" = "Missing path: the path to an image or PDF";
+"pages 写法是 \"1-3,5\"" = "pages should be written like \"1-3,5\"";
+"languages 要一个字符串数组，如 [\"chinese-first\"]、[\"zh-Hans\", \"en-US\"]" = "languages must be an array of strings, such as [\"chinese-first\"] or [\"zh-Hans\", \"en-US\"]";
+"region 要四个数：[左, 上, 宽, 高]" = "region needs four numbers: [left, top, width, height]";
+"detail 只能是 text 或 full" = "detail can only be text or full";
+"outputPath 要一个路径字符串" = "outputPath must be a path string";
+
+/* MCPServer.swift */
+"认完 %lld / %lld 页" = "Recognized %lld of %lld pages";
+"拾字：Mac 自带文字识别" = "Shizi: Built-in Mac Text Recognition";
+"用 macOS 自带的文字识别读图片或 PDF 里的字，全在本机。要认图里的字就调 ocr_image；页数多、要整份全文就调 ocr_to_file（写成文件，回复只给路径和摘要）；想知道这台机器能认哪些、插件通不通，调 ocr_status。" = "Reads the text in images or PDFs with macOS’s built-in text recognition, entirely on this Mac. To recognize the text in an image, call ocr_image; for long documents where you need the whole text, call ocr_to_file (it writes a file, and the reply gives only the path and a summary); to find out what this Mac can recognize and whether plugins are reachable, call ocr_status.";
+
+/* CLI.swift */
+"用法：\n  shizi-mcp                       作为 MCP 服务运行（标准输入输出）\n  shizi-mcp ocr <图片或PDF> [选项]    在命令行里认一张图\n  shizi-mcp status                看系统能力和插件状况\n  shizi-mcp --version             版本号\n\nocr 的选项：\n  --mode auto|lines|document      默认 auto\n  --lang auto|chinese-first|zh-Hans,en-US,...\n                                  默认照配置（拾字设置里的「识别语言」），没配就是自动判断\n  --pages 1-3,5                   PDF 页码，默认前 20 页\n  --region 左,上,宽,高             只认这一块（0–1，左上为原点）\n  --rectify auto|on|off           拉正拍歪的纸，默认 auto\n  --tiles auto|on|off             大图小字切块细认，默认 auto\n  --no-barcodes                   不找二维码 / 条码（默认找）\n  --no-plugins                    这次不调插件\n  --no-text-layer                 PDF 也全部认图，不用它自带的文字\n  --json                          输出完整的结构化结果\n\n插件配置：~/.config/shizi/config.json（或环境变量 SHIZI_CONFIG），见 docs/plugins.zh-CN.md。" = "Usage:\n  shizi-mcp                       Run as an MCP server (standard input and output)\n  shizi-mcp ocr <file> [options]  Recognize an image or PDF on the command line\n  shizi-mcp status                Show system capabilities and plugin status\n  shizi-mcp --version             Show the version number\n\nOptions for ocr:\n  --mode auto|lines|document      Default: auto\n  --lang auto|chinese-first|zh-Hans,en-US,...\n                                  Default: follows the configuration (Recognition language in Shizi’s settings); automatic if not set\n  --pages 1-3,5                   PDF pages; default: the first 20 pages\n  --region left,top,width,height  Recognize only this area (0–1, origin at the top left)\n  --rectify auto|on|off           Straighten tilted pages; default: auto\n  --tiles auto|on|off             Split large images into tiles to read small text; default: auto\n  --no-barcodes                   Don’t look for QR codes / barcodes (they’re looked for by default)\n  --no-plugins                    Don’t call plugins this time\n  --no-text-layer                 Recognize PDFs from the image too, without using their own text\n  --json                          Output the full structured result\n\nPlugin configuration: ~/.config/shizi/config.json (or the SHIZI_CONFIG environment variable); see docs/plugins.md.";
+"不认识的命令：%@" = "Unknown command: %@";
+"%@ 后面要跟一个值" = "%@ needs a value after it";
+"不认识的选项 %@" = "Unknown option %@";
+"要给一个图片或 PDF 的路径" = "Missing the path to an image or PDF";
+"拾字 shizi-mcp %@" = "Shizi shizi-mcp %@";
+"系统：macOS %lld.%lld.%lld" = "System: macOS %lld.%lld.%lld";
+"可用" = "available";
+"不可用，要 macOS 26 或更新" = "not available; requires macOS 26 or later";
+"认文档（表格、多栏、竖排）：%@" = "Document mode (tables, multiple columns, vertical text): %@";
+"支持的语言：%@" = "Supported languages: %@";
+"中文优先（先按中文认，西文页、中文认不了的页改回自动判断）" = "Chinese First (recognizes as Chinese first; pages in a Western language, or with text Chinese recognition can’t read, switch back to automatic)";
+"系统自动判断" = "automatic (the system decides)";
+"不指定语言时：%@" = "When no language is specified: %@";
+"配置文件：%@" = "Configuration file: %@";
+"配置文件：%@（不存在，等于没有插件）" = "Configuration file: %@ (doesn’t exist, so there are no plugins)";
+"配置问题：%@" = "Configuration problem: %@";
+"插件：没有" = "Plugins: none";
+"插件 %@（%@）：正常 %@" = "Plugin %@ (%@): OK %@";
+"  注意：%@" = "  Warning: %@";
+"插件 %@（%@）：有问题 —— %@" = "Plugin %@ (%@): problem — %@";
+
+/* FileOutput.swift */
+"outputPath 要写绝对路径（可以用 ~）" = "outputPath must be an absolute path (~ works)";
+"outputPath 要以 .md 结尾（detail=full 时另写一份同名的 .json），或者是一个已有的文件夹" = "outputPath must end in .md (with detail=full, a .json with the same name is written too) or be an existing folder";
+"写好了：%@" = "File written: %@";
+"第 %@ 页（文件一共 %lld 页），%lld 字，%@，用了 %@ 秒。" = "Pages %@ of %lld, %lld characters, %@, took %@ s.";
+"JSON：%@（%@）" = "JSON: %@ (%@)";
+"可能认错的行 %lld 行，文件里每页末尾列着，正文里原样保留。" = "Lines that may be misrecognized: %lld. They’re listed at the end of each page in the file and kept as is in the text.";
+"每页开头：" = "First line of each page:";
+"（没认出字）" = "(no text recognized)";
+"第 %lld 页　%@" = "Page %lld: %@";
+"……（其余 %lld 页见文件）" = "… (remaining pages: %lld; see the file)";
+"【说明】" = "[Notes]";
+"【一次最多写 %lld 页，这次写了第 %@ 页；没写的接着用 pages=\"%@\"（会另写一个文件）】" = "[At most %lld pages are written per call, and this call wrote pages %@; for the rest, call again with pages=\"%@\" (it writes a separate file)]";
+
+/* Arguments.swift */
+"pages 写法是 \"1-3,5\"，看不懂「%@」" = "pages should be written like \"1-3,5\"; can’t understand “%@”";
+"pages 是空的" = "pages is empty";
+"region 要四个 0–1 的数：[左, 上, 宽, 高]（左上角为原点）" = "region needs four numbers from 0 to 1: [left, top, width, height] (origin at the top left)";
+"%@ 不认识「%@」" = "Unknown value for %@: “%@”";
+
+/* Output.swift */
+"【只认了 %lld 页，文件一共 %lld 页；要别的页用 pages 参数】" = "[Recognized %lld of the file’s %lld pages; use the pages parameter to get other pages]";
+"【第 %lld 页】" = "[Page %lld]";
+"【二维码 / 条码】" = "[QR codes / barcodes]";
+"- %@　（判定插件：认错的可能约 %lld%%）" = "- %@  (judgment plugin: about %lld%% chance it’s misrecognized)";
+"- %@　（系统可信度低）" = "- %@  (low confidence)";
+"- %@　（只有认文档认出，多半是公章或签名）" = "- %@  (found only by document mode; probably a stamp or signature)";
+"- 还有 %lld 行，略" = "- (%lld more not shown)";
+"【可能认错的行】（原样留在上面，没有删）" = "[Lines that may be misrecognized] (left unchanged in the text above, not removed)";
+"第 %lld 页" = "Page %lld";
+"这张图" = "This image";
+"【%@的字太多，一次回复放不下，只给了前 %lld 行（共 %lld 行）；可以用 region 参数把它分成几块认】" = "[%@ has too much text to fit in one reply; only the first %lld of %lld lines are included. Use the region parameter to recognize it in several parts]";
+"【连同 JSON 一次回复放不下，这次只给了字；要每行位置这些完整结果，用 ocr_to_file 写成文件】" = "[The text and JSON together don’t fit in one reply, so only the text is included this time. For full results such as each line’s position, use ocr_to_file to write them to a file]";
+"一次回复最多约 %lld KB，再多放不下" = "a reply can hold about %lld KB at most";
+"一次最多认 %lld 页" = "at most %lld pages are recognized per call";
+"【这次给了第 %@ 页（%@）；文件一共 %lld 页，没给的接着用 pages=\"%@\"；要整份全文可以用 ocr_to_file 写成文件】" = "[This reply covers pages %@ (%@). The file has %lld pages in total; for the rest, continue with pages=\"%@\". To get the full text of the whole file, use ocr_to_file to write it to a file]";
+
+/* Export.swift */
+"二维码 / 条码：" = "QR codes / barcodes:";
+
+/* ResultFile.swift */
+"%@ 已经有了，不覆盖；换个文件名" = "%@ already exists and won’t be overwritten; use a different file name";
+"写不了 %@" = "Can’t write %@";
+
+/* Images.swift */
+"找不到文件：%@" = "File not found: %@";
+"读不了这个文件（不是图片或 PDF，或者文件坏了）：%@" = "Can’t read this file (it isn’t an image or PDF, or it’s damaged): %@";
+"参数不对：%@" = "Invalid argument: %@";
+"识别失败：%@" = "Recognition failed: %@";
+"图片数据" = "image data";
+"图片" = "image";
+"PDF 一共 %lld 页，给的页码都不在范围里" = "The PDF has %lld pages in total; none of the given page numbers are in range";
+"%@ 第 %lld 页" = "page %2$lld of %1$@";
+
+/* PhotoIndex.swift */
+"照片库：%@" = "Photo index: %@";
+
+/* Plugins.swift */
+"配置文件 %@ 读不了，先按没有插件处理：%@" = "Can’t read the configuration file %@, so no plugins are used for now: %@";
+"插件 %@：%@" = "Plugin %@: %@";
+"输入没法写成 JSON" = "Couldn’t write the input as JSON";
+"启动不了（%@）：%@" = "Couldn’t start (%@): %@";
+"超过 %lld 毫秒没回，已停掉" = "Timed out after %lld ms and was stopped";
+"回的不是 JSON（退出码 %@）" = "The reply isn’t JSON (exit code %@)";
+"回的不是 JSON（退出码 %@）：%@" = "The reply isn’t JSON (exit code %@): %@";
+"回的 JSON 里没有 output" = "The JSON reply has no output field";
+
+/* Pipeline.swift */
+"region 裁出来是空的" = "region crops to an empty area";
+"指定的语言里中日韩的排到了最前：系统只用第一个语言的模型，英文放前面时汉字全认错" = "Chinese, Japanese, and Korean were moved to the front of the specified languages: the system uses only the first language’s model, and with English first, Chinese characters all come out wrong";
+"%@，这一步按代码规则处理" = "%@, so built-in rules were used for this step";
+"先把纸拉正再认；结果里的坐标相对拉正后的图" = "The page was straightened before recognition; coordinates in the results are relative to the straightened image";
+"没找到纸边，没有拉正" = "Couldn’t find the page edges, so the image wasn’t straightened";
+"字很小，切成 %@ 块细认；没走认文档，表格、分栏的结构没有保留" = "The text is small, so the image was split into %@ tiles for a closer look; document mode wasn’t used, so table and column structure isn’t preserved";
+"逐行认出的字只有 %lld%% 归进了认文档找到的版面，其余列在最后；可以用 mode=lines 对比" = "Only %lld%% of the text recognized line by line fit into the layout found by document mode; the rest is listed at the end. You can compare with mode=lines";
+"认文档没找到表格，页上却画着表格线：用的是逐行结果，按线围成的格子一排排读" = "Document mode found no table, but the page has ruled table lines, so the line-by-line result was used, read row by row through the cells formed by the lines";
+"认文档找到的版面只装得下逐行结果的 %lld%%，改用逐行结果；表格、分栏的结构没有保留" = "The layout found by document mode holds only %lld%% of the line-by-line result, so the line-by-line result was used instead; table and column structure isn’t preserved";
+"〔中间〕〔左侧〕这类标记不是认出来的字，是它下面那段字的大致位置（相对整张图；指定了区域时相对那块区域）；分成几栏时才标" = "Markers like 〔middle〕 and 〔left〕 aren’t recognized text: each gives the rough position of the passage below it (relative to the whole image, or to the region when one is specified). They’re added only when the page is split into columns";
+"图里可能有沿圆圈或弧线排列的字（印章之类），这部分系统认不准；可以把那块裁出来单独处理" = "The image may have text laid out along a circle or arc (such as a seal), which the system can’t recognize reliably; you can crop that area and process it separately";
+"没认出字" = "No text recognized";
+"%@，可疑行只按系统可信度标" = "%@, so lines that may be misrecognized are marked by system confidence only";
+
+/* Reading.swift */
+"左上" = "top left";
+"上方" = "top";
+"右上" = "top right";
+"左侧" = "left";
+"中间" = "middle";
+"右侧" = "right";
+"左下" = "bottom left";
+"下方" = "bottom";
+"右下" = "bottom right";
+
+/* TextLayer.swift */
+"这一页有别的软件加的隐形文字层（扫描件常见），质量不知道，没用它，是重新认的" = "This page has an invisible text layer added by other software (common on scans), of unknown quality; it wasn’t used, and the page was recognized from the image instead";
+"这一页的文字层里同样的字有可见、隐形两份（被别的软件 OCR 过），没用它，是重新认的" = "This page’s text layer has the same text twice, visible and invisible (OCR’d by other software); it wasn’t used, and the page was recognized from the image instead";
+"这一页 PDF 自带的文字有乱码（字体没带编码表），没用它，是重新认的" = "The PDF’s own text on this page has garbled characters (a font has no encoding table); it wasn’t used, and the page was recognized from the image instead";
+"这一页 PDF 自带的文字跟页面上的字对不上（抽查了一段），没用它，是重新认的" = "The PDF’s own text on this page doesn’t match the text shown on the page (checked on a sample passage); it wasn’t used, and the page was recognized from the image instead";
+
+/* Document.swift */
+"（以下是没归进版面的零散字，多半是公章、签名或手写）" = "(The scattered text below didn’t fit into the layout; it’s probably from stamps, signatures, or handwriting)";
+
+/* Classify.swift */
+"先写一句要找什么" = "First describe what to find";
+"先写几个类别" = "First enter some categories";
+"条件写在 200 字以内" = "Keep the condition to 200 characters or fewer";
+"类别写 1 到 8 个，一行一个「名称：判断标准」" = "Enter 1 to 8 categories, one per line as “Name: criteria”";
+"第 %lld 行少了冒号，写成「名称：判断标准」" = "Line %lld is missing a colon; write it as “Name: criteria”";
+"第 %lld 行的名称或判断标准是空的" = "Line %lld has an empty name or criteria";
+"第 %lld 行太长：名称最多 20 字，判断标准最多 200 字" = "Line %lld is too long: names can be up to 20 characters and criteria up to 200";
+"「%@」是留着的名字，换一个" = "“%@” is a reserved name; choose another one";
+"「%@」写了两次" = "“%@” is listed twice";
+"照片存不成 JPEG" = "Couldn’t save the photo as JPEG";
+"回的分数里缺了「%@」" = "The returned scores are missing “%@”";
+
+/* Sources/ocr-plugin-systemone/main.swift */
+"回复没法写成 JSON" = "Couldn’t write the reply as JSON";
+"输入不是插件约定的 JSON" = "The input isn’t the JSON the plugin protocol expects";
+"没配 SYSTEMONE_URL（判定服务的地址）" = "SYSTEMONE_URL isn’t set (the judgment service’s URL)";
+"SYSTEMONE_URL 不对：要 http:// 或 https:// 开头，不带用户名密码" = "SYSTEMONE_URL is invalid: it must start with http:// or https:// and can’t include a user name or password";
+"没配 SYSTEMONE_MODEL（模型名）" = "SYSTEMONE_MODEL isn’t set (the model name)";
+"<插件的 name>" = "<plugin name>";
+"没有密钥：在拾字的设置里填，或者 security add-generic-password -s shizi -a %@ -w" = "No API key: enter it in Shizi’s Settings, or run security add-generic-password -s shizi -a %@ -w";
+"密钥不对或没有权限（服务回 %lld）" = "Wrong API key or no permission (the service returned %lld)";
+"地址不对：服务上没有 /v1/systemone（404）" = "Wrong URL: the service has no /v1/systemone (404)";
+"服务不认这个请求（%lld）：多半是模型名不对，或者这个服务不收图" = "The service rejected the request (%lld): most likely the model name is wrong, or this service doesn’t accept images";
+"服务出错了（%lld）" = "The service ran into an error (%lld)";
+"服务回 %lld" = "The service returned %lld";
+"请求没法写成 JSON" = "Couldn’t write the request as JSON";
+"服务回的不是 JSON" = "The service’s reply isn’t JSON";
+"服务一直忙（429）" = "The service stayed busy (429)";
+"启动不了 /usr/bin/curl" = "Couldn’t start /usr/bin/curl";
+"找不到这个地址（%@）" = "Can’t find this address (%@)";
+"连不上 %@：服务没开，或者端口不对" = "Can’t connect to %@: the service isn’t running, or the port is wrong";
+"%@ 20 秒没回" = "%@ didn’t respond within 20 seconds";
+"跟 %@ 的 HTTPS 握手没成" = "The HTTPS handshake with %@ failed";
+"连不上 %@（curl 退出码 %@）" = "Can’t connect to %@ (curl exit code %@)";
+"没拿到服务的状态码" = "Didn’t get a status code from the service";
+"回复里没有 answers" = "The reply has no answers field";
+"服务回了话，但没答对测试题：检查模型名（SYSTEMONE_MODEL）" = "The service replied but got the test question wrong: check the model name (SYSTEMONE_MODEL)";
+"收图，但看图的测试题没答对：route 给的信号可能不准" = "Accepts images, but got the image test question wrong: signals from route may be inaccurate";
+"这个服务不收图，route 用不了：配置里这个插件的 hooks 只留 review" = "This service doesn’t accept images, so route can’t be used: in the configuration file, keep only review in this plugin’s hooks";
+"route 的输入里没有能用的图" = "The route input has no usable image";
+"分类没给题" = "The classify request has no questions";
+"分类没给字也没给图" = "The classify request has neither text nor an image";
+"不认识的口子：%@" = "Unknown hook: %@";
+
+/* CLI.swift：插件约定里收不收图的值，状态里印给人看时翻 */
+"收" = "accepts images";
+"不收" = "doesn’t accept images";

@@ -4,7 +4,7 @@ import Foundation
 public func renderText(_ pages: [PageResult], totalPages: Int, maxSuspects: Int = 30) -> String {
 	var parts = pages.map { renderPage($0, multi: totalPages > 1, maxSuspects: maxSuspects) }
 	if totalPages > pages.count {
-		parts.append("【只认了 \(pages.count) 页，文件一共 \(totalPages) 页；要别的页用 pages 参数】")
+		parts.append(Texts.text("【只认了 \(pages.count) 页，文件一共 \(totalPages) 页；要别的页用 pages 参数】"))
 	}
 	return parts.joined(separator: "\n\n")
 }
@@ -12,25 +12,25 @@ public func renderText(_ pages: [PageResult], totalPages: Int, maxSuspects: Int 
 /// 一页给模型看的文字。多页的文件开头标【第 N 页】。
 public func renderPage(_ p: PageResult, multi: Bool, maxSuspects: Int = 30) -> String {
 	var block: [String] = []
-	if multi { block.append("【第 \(p.page) 页】") }
-	block.append(p.text.isEmpty ? "（没认出字）" : p.text)
+	if multi { block.append(Texts.text("【第 \(p.page) 页】")) }
+	block.append(p.text.isEmpty ? Texts.text("（没认出字）") : p.text)
 	if !p.barcodes.isEmpty {
-		block.append("\n【二维码 / 条码】\n" + p.barcodes.joined(separator: "\n"))
+		block.append("\n" + Texts.text("【二维码 / 条码】") + "\n" + p.barcodes.joined(separator: "\n"))
 	}
 	let suspects = p.lines.filter { $0.suspect != nil }
 	if !suspects.isEmpty {
 		var list = suspects.prefix(maxSuspects).map { l -> String in
 			switch l.suspect!.reason {
-			case .plugin: return "- \(l.text)　（判定插件：认错的可能约 \(Int((l.suspect!.probability ?? 0) * 100))%）"
-			case .lowConfidence: return "- \(l.text)　（系统可信度低）"
-			case .documentOnly: return "- \(l.text)　（只有认文档认出，多半是公章或签名）"
+			case .plugin: return Texts.text("- \(l.text)　（判定插件：认错的可能约 \(Int((l.suspect!.probability ?? 0) * 100))%）")
+			case .lowConfidence: return Texts.text("- \(l.text)　（系统可信度低）")
+			case .documentOnly: return Texts.text("- \(l.text)　（只有认文档认出，多半是公章或签名）")
 			}
 		}
-		if suspects.count > maxSuspects { list.append("- 还有 \(suspects.count - maxSuspects) 行，略") }
-		block.append("\n【可能认错的行】（原样留在上面，没有删）\n" + list.joined(separator: "\n"))
+		if suspects.count > maxSuspects { list.append(Texts.text("- 还有 \(suspects.count - maxSuspects) 行，略")) }
+		block.append("\n" + Texts.text("【可能认错的行】（原样留在上面，没有删）") + "\n" + list.joined(separator: "\n"))
 	}
 	if !p.notes.isEmpty {
-		block.append("\n【说明】\n" + p.notes.map { "- \($0)" }.joined(separator: "\n"))
+		block.append("\n" + Texts.text("【说明】") + "\n" + p.notes.map { "- \($0)" }.joined(separator: "\n"))
 	}
 	return block.joined(separator: "\n")
 }
@@ -123,14 +123,15 @@ public struct ModelReply {
 	public func content(remaining: [Int]) -> [String] {
 		var parts = blocks
 		if let cut {
-			parts.append("【\(totalPages > 1 ? "第 \(cut.page) 页" : "这张图")的字太多，一次回复放不下，只给了前 \(cut.shown) 行（共 \(cut.total) 行）；可以用 region 参数把它分成几块认】")
+			let what = totalPages > 1 ? Texts.text("第 \(cut.page) 页") : Texts.text("这张图")
+			parts.append(Texts.text("【\(what)的字太多，一次回复放不下，只给了前 \(cut.shown) 行（共 \(cut.total) 行）；可以用 region 参数把它分成几块认】"))
 		}
 		if jsonDropped {
-			parts.append("【连同 JSON 一次回复放不下，这次只给了字；要每行位置这些完整结果，用 ocr_to_file 写成文件】")
+			parts.append(Texts.text("【连同 JSON 一次回复放不下，这次只给了字；要每行位置这些完整结果，用 ocr_to_file 写成文件】"))
 		}
 		if !remaining.isEmpty {
-			let why = full ? "一次回复最多约 \(maxBytes / 1024) KB，再多放不下" : "一次最多认 \(ImageLimits.maxPages) 页"
-			parts.append("【这次给了第 \(pageRanges(pages)) 页（\(why)）；文件一共 \(totalPages) 页，没给的接着用 pages=\"\(shortRanges(remaining))\"；要整份全文可以用 ocr_to_file 写成文件】")
+			let why = full ? Texts.text("一次回复最多约 \(maxBytes / 1024) KB，再多放不下") : Texts.text("一次最多认 \(ImageLimits.maxPages) 页")
+			parts.append(Texts.text("【这次给了第 \(pageRanges(pages)) 页（\(why)）；文件一共 \(totalPages) 页，没给的接着用 pages=\"\(shortRanges(remaining))\"；要整份全文可以用 ocr_to_file 写成文件】"))
 		}
 		var out = [parts.joined(separator: "\n\n")]
 		if withJSON && !pageJSONs.isEmpty {

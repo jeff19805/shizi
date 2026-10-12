@@ -87,25 +87,25 @@ public struct ClassifyRules: Equatable, Sendable {
 
 	static func parse(mode: Mode, source: String) throws -> ClassifyRules {
 		let text = source.trimmingCharacters(in: .whitespacesAndNewlines)
-		guard !text.isEmpty else { throw Problem(mode == .condition ? "先写一句要找什么" : "先写几个类别") }
+		guard !text.isEmpty else { throw Problem(mode == .condition ? Texts.text("先写一句要找什么") : Texts.text("先写几个类别")) }
 		if mode == .condition {
-			guard text.count <= 200 else { throw Problem("条件写在 200 字以内") }
+			guard text.count <= 200 else { throw Problem(Texts.text("条件写在 200 字以内")) }
 			return ClassifyRules(mode: .condition, rules: [Rule(id: "match", title: matched, criteria: text)])
 		}
 		let lines = text.split(whereSeparator: \.isNewline).map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
-		guard (1...8).contains(lines.count) else { throw Problem("类别写 1 到 8 个，一行一个「名称：判断标准」") }
+		guard (1...8).contains(lines.count) else { throw Problem(Texts.text("类别写 1 到 8 个，一行一个「名称：判断标准」")) }
 		var names = Set<String>()
 		var rules: [Rule] = []
 		for (i, line) in lines.enumerated() {
 			guard let colon = line.firstIndex(where: { $0 == ":" || $0 == "：" }) else {
-				throw Problem("第 \(i + 1) 行少了冒号，写成「名称：判断标准」")
+				throw Problem(Texts.text("第 \(i + 1) 行少了冒号，写成「名称：判断标准」"))
 			}
 			let title = line[..<colon].trimmingCharacters(in: .whitespaces)
 			let criteria = line[line.index(after: colon)...].trimmingCharacters(in: .whitespaces)
-			guard !title.isEmpty, !criteria.isEmpty else { throw Problem("第 \(i + 1) 行的名称或判断标准是空的") }
-			guard title.count <= 20, criteria.count <= 200 else { throw Problem("第 \(i + 1) 行太长：名称最多 20 字，判断标准最多 200 字") }
-			guard ![undecided, matched, unmatched].contains(title) else { throw Problem("「\(title)」是留着的名字，换一个") }
-			guard names.insert(title).inserted else { throw Problem("「\(title)」写了两次") }
+			guard !title.isEmpty, !criteria.isEmpty else { throw Problem(Texts.text("第 \(i + 1) 行的名称或判断标准是空的")) }
+			guard title.count <= 20, criteria.count <= 200 else { throw Problem(Texts.text("第 \(i + 1) 行太长：名称最多 20 字，判断标准最多 200 字")) }
+			guard ![undecided, matched, unmatched].contains(title) else { throw Problem(Texts.text("「\(title)」是留着的名字，换一个")) }
+			guard names.insert(title).inserted else { throw Problem(Texts.text("「\(title)」写了两次")) }
 			rules.append(Rule(id: "t\(i)", title: title, criteria: criteria))
 		}
 		return ClassifyRules(mode: .topics, rules: rules)
@@ -171,7 +171,7 @@ public enum Classifier {
 		-> Result<[String: Double], PluginFailure>
 	{
 		let small = downscaledQuickly(image, longSide: longSide)
-		guard let jpeg = jpegData(small, quality: 0.82) else { return .failure(PluginFailure(plugin: plugin.name, message: "照片存不成 JPEG")) }
+		guard let jpeg = jpegData(small, quality: 0.82) else { return .failure(PluginFailure(plugin: plugin.name, message: Texts.text("照片存不成 JPEG"))) }
 		let image: [String: Any] = ["data": jpeg.base64EncodedString(), "type": "jpeg", "width": small.width, "height": small.height]
 		return ask(["questions": questions(rules), "image": image], rules: rules, host: host, plugin: plugin)
 	}
@@ -187,7 +187,9 @@ public enum Classifier {
 			var scores: [String: Double] = [:]
 			for rule in rules.rules {
 				guard let p = (got[rule.id] as? NSNumber)?.doubleValue, p.isFinite, (0...1).contains(p) else {
-					return .failure(PluginFailure(plugin: plugin.name, message: "回的分数里缺了「\(rule.title)」"))
+					// 按一句条件找时，题目的名字是固定标签（符合条件……），它们要留着中文算指纹，给人看时换成界面的语言；用户写的类别名查不到，原样出。
+					let title = Texts.text(String.LocalizationValue(rule.title))
+					return .failure(PluginFailure(plugin: plugin.name, message: Texts.text("回的分数里缺了「\(title)」")))
 				}
 				scores[rule.id] = p
 			}

@@ -13,10 +13,10 @@ public enum OCRError: Error, CustomStringConvertible {
 
 	public var description: String {
 		switch self {
-		case .notFound(let p): return "找不到文件：\(p)"
-		case .unreadable(let p): return "读不了这个文件（不是图片或 PDF，或者文件坏了）：\(p)"
-		case .badArgument(let m): return "参数不对：\(m)"
-		case .recognition(let m): return "识别失败：\(m)"
+		case .notFound(let p): return Texts.text("找不到文件：\(p)")
+		case .unreadable(let p): return Texts.text("读不了这个文件（不是图片或 PDF，或者文件坏了）：\(p)")
+		case .badArgument(let m): return Texts.text("参数不对：\(m)")
+		case .recognition(let m): return Texts.text("识别失败：\(m)")
 		}
 	}
 }
@@ -67,7 +67,7 @@ public final class PageSource: @unchecked Sendable {
 	}
 
 	/// 内存里的图片或 PDF 数据（界面里粘贴的、从照片图库取来的），不用先存成文件。带方向标记的照片按标记转正。
-	public convenience init(data: Data, name: String = "图片数据") throws {
+	public convenience init(data: Data, name: String = Texts.text("图片数据")) throws {
 		if data.starts(with: Data("%PDF-".utf8)), let provider = CGDataProvider(data: data as CFData), let pdf = CGPDFDocument(provider),
 			pdf.numberOfPages > 0
 		{
@@ -81,7 +81,7 @@ public final class PageSource: @unchecked Sendable {
 	}
 
 	/// 已经在内存里的一张图。
-	public init(image: CGImage, name: String = "图片") {
+	public init(image: CGImage, name: String = Texts.text("图片")) {
 		picture = image
 		pdf = nil
 		totalPages = 1
@@ -125,7 +125,7 @@ public final class PageSource: @unchecked Sendable {
 	/// 这次认哪几页：在 `wanted` 里从头取，最多 `limit` 页（nil 不限）。一页都不剩就报错。
 	public func select(_ requested: [Int]?, limit: Int?) throws -> [Int] {
 		let all = wanted(requested)
-		guard !all.isEmpty else { throw OCRError.badArgument("PDF 一共 \(totalPages) 页，给的页码都不在范围里") }
+		guard !all.isEmpty else { throw OCRError.badArgument(Texts.text("PDF 一共 \(totalPages) 页，给的页码都不在范围里")) }
 		return limit.map { Array(all.prefix($0)) } ?? all
 	}
 
@@ -133,7 +133,7 @@ public final class PageSource: @unchecked Sendable {
 	public func image(page n: Int) throws -> CGImage {
 		if let picture { return picture }
 		guard let page = pdf?.page(at: n), let image = renderPDFPage(page, longSide: ImageLimits.pdfLongSide) else {
-			throw OCRError.unreadable("\(name) 第 \(n) 页")
+			throw OCRError.unreadable(Texts.text("\(name) 第 \(n) 页"))
 		}
 		return image
 	}
@@ -142,7 +142,7 @@ public final class PageSource: @unchecked Sendable {
 	public func image(page n: Int, longSide: Int) throws -> CGImage {
 		if let picture { return downscaledQuickly(picture, longSide: longSide) }
 		guard let page = pdf?.page(at: n), let image = renderPDFPage(page, longSide: Double(longSide)) else {
-			throw OCRError.unreadable("\(name) 第 \(n) 页")
+			throw OCRError.unreadable(Texts.text("\(name) 第 \(n) 页"))
 		}
 		return image
 	}

@@ -35,6 +35,10 @@
   SwiftUI 接口直接收字面量的（`Text("…")`、`Button("…")`、`.help("…")`……）自己会按语言取字；先存进 `String` 的要写成 `String(localized: "…")`。
   句子里别直接插小数：`Double` 插进去会被格式化成 0.500000（中文界面也是），先转成文字。不是给人看的中文（存设置的键、发给判定服务的题目、
   写进别的程序的字、用户的内容）不翻，加进 `LocalizationTests` 的 `untranslated`。漏翻的、用不上的英文，`LocalizationTests` 都会报。
+- 识别核心、MCP 服务、判定插件里给人看的字（工具说明和回复、命令行提示、结果里的说明、插件报的错）写成 `Texts.text("…")`，
+  英文进同一张对照表；语言跟 App 一样定（`Sources/OCRCore/Texts.swift`，插件里有一份拷贝，改了两边一起改）。翻过的字别存进
+  `static let` 或全局 `let`：测试要在一个进程里来回切中英文。发给判定服务的题目、分类的默认类别、匹配用的字表这些不是给人看的，别包。
+  `EnglishOutputTests` 在英文下跑一遍工具说明、命令行、结果排版、认图、写文件，输出里有汉字就报。
 - 改了识别流程（`Pipeline`、`Tiles`、`Document`、`Rectify`、`Reading`、`Lines` 里的判断）要跑验收：
   改之前先跑 `node bench/bench.mjs <研究目录> --label 改前` 当基准，改完再跑 `--label 改后`，比两次的平均分、低于研究最好的张数和耗时
   （结果在 `bench/out/`，不进仓库）。分数掉了要么修，要么在提交说明里写清原因。

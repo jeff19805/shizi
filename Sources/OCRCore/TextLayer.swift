@@ -328,10 +328,10 @@ public enum TextLayerSkip: String, Sendable {
 	var note: String? {
 		switch self {
 		case .noText, .mostlyImage: return nil
-		case .hiddenOnly: return "这一页有别的软件加的隐形文字层（扫描件常见），质量不知道，没用它，是重新认的"
-		case .doubled: return "这一页的文字层里同样的字有可见、隐形两份（被别的软件 OCR 过），没用它，是重新认的"
-		case .badCharacters: return "这一页 PDF 自带的文字有乱码（字体没带编码表），没用它，是重新认的"
-		case .failedCheck: return "这一页 PDF 自带的文字跟页面上的字对不上（抽查了一段），没用它，是重新认的"
+		case .hiddenOnly: return Texts.text("这一页有别的软件加的隐形文字层（扫描件常见），质量不知道，没用它，是重新认的")
+		case .doubled: return Texts.text("这一页的文字层里同样的字有可见、隐形两份（被别的软件 OCR 过），没用它，是重新认的")
+		case .badCharacters: return Texts.text("这一页 PDF 自带的文字有乱码（字体没带编码表），没用它，是重新认的")
+		case .failedCheck: return Texts.text("这一页 PDF 自带的文字跟页面上的字对不上（抽查了一段），没用它，是重新认的")
 		}
 	}
 }

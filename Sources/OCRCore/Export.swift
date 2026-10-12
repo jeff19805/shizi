@@ -8,9 +8,9 @@ public func exportMarkdown(_ pages: [PageResult], title: String, totalPages: Int
 	var parts = ["# \(title)"]
 	for p in pages {
 		var block: [String] = []
-		if totalPages > 1 { block.append("## 第 \(p.page) 页") }
-		block.append(p.cleanText.isEmpty ? "（没认出字）" : p.cleanText)
-		if !p.barcodes.isEmpty { block.append("二维码 / 条码：\n" + p.barcodes.map { "- \($0)" }.joined(separator: "\n")) }
+		if totalPages > 1 { block.append("## " + Texts.text("第 \(p.page) 页")) }
+		block.append(p.cleanText.isEmpty ? Texts.text("（没认出字）") : p.cleanText)
+		if !p.barcodes.isEmpty { block.append(Texts.text("二维码 / 条码：") + "\n" + p.barcodes.map { "- \($0)" }.joined(separator: "\n")) }
 		parts.append(block.joined(separator: "\n\n"))
 	}
 	return parts.joined(separator: "\n\n") + "\n"
@@ -20,7 +20,7 @@ public func exportMarkdown(_ pages: [PageResult], title: String, totalPages: Int
 public func exportPlainText(_ pages: [PageResult], totalPages: Int) -> String {
 	pages.map { p in
 		var block: [String] = []
-		if totalPages > 1 { block.append("第 \(p.page) 页") }
+		if totalPages > 1 { block.append(Texts.text("第 \(p.page) 页")) }
 		if !p.cleanText.isEmpty { block.append(p.cleanText) }
 		block += p.barcodes
 		return block.joined(separator: "\n")

@@ -2,7 +2,8 @@ import Foundation
 
 /// 插件约定（第 2 版）：插件是一个独立的小程序。核心每次调用时启动它，往标准输入写一行 JSON
 /// `{"protocol":2,"hook":"<口子>","input":{...}}`，它往标准输出回一行 `{"output":{...}}` 或 `{"error":"原因"}`。
-/// 环境变量只给白名单里的几个（见 `PluginHost.environment`），加上 `OCR_PLUGIN_NAME`（配置里的 name）和配置里的 env。
+/// 环境变量只给白名单里的几个（见 `PluginHost.environment`），加上 `OCR_PLUGIN_NAME`（配置里的 name）、`OCR_PLUGIN_LANGUAGE`
+/// （核心给人看的字用的语言，en 或 zh-Hans）和配置里的 env。
 ///
 /// 插件只给概率，所有门槛和「怎么认」都由核心定，这样不装插件也能测、插件也能随时换。三个口子：
 /// - `describe`：测连接、说明自己。输入 `{"hooks":[配置里接的口子]}`；回什么随意，`ocr_status` 原样显示，
@@ -94,7 +95,8 @@ public struct OCRConfig: Codable, Sendable {
 			let data = try Data(contentsOf: URL(fileURLWithPath: path))
 			return (try JSONDecoder().decode(OCRConfig.self, from: data), nil)
 		} catch {
-			return (OCRConfig(), "配置文件 \(path) 读不了，先按没有插件处理：\(error)")
+			let why = "\(error)"
+			return (OCRConfig(), Texts.text("配置文件 \(path) 读不了，先按没有插件处理：\(why)"))
 		}
 	}
 }
@@ -117,7 +119,7 @@ public struct PluginFailure: Error, CustomStringConvertible {
 
 	public var plugin: String
 	public var message: String
-	public var description: String { "插件 \(plugin)：\(message)" }
+	public var description: String { Texts.text("插件 \(plugin)：\(message)") }
 }
 
 /// 一次正在进行的插件调用；`wait()` 等它结束（最多等到超时）。
@@ -159,6 +161,8 @@ public final class PluginHost: Sendable {
 	static func environment(for plugin: PluginConfig, parent: [String: String]) -> [String: String] {
 		var env = parent.filter { passThrough.contains($0.key) || $0.key.hasPrefix("LC_") || $0.key.hasPrefix("XDG_") }
 		env["OCR_PLUGIN_NAME"] = plugin.name
+		// 插件报的话（出错、测连接的结果）跟核心用同一种语言：插件自己照系统定的话，会跟拾字设的界面语言、跟测试里的核心对不上。
+		env["OCR_PLUGIN_LANGUAGE"] = Texts.english == nil ? "zh-Hans" : "en"
 		for (k, v) in plugin.env ?? [:] { env[k] = v }
 		return env
 	}
@@ -185,7 +189,7 @@ public final class PluginHost: Sendable {
 		func fail(_ m: String) -> Result<[String: Any], PluginFailure> { .failure(PluginFailure(plugin: plugin.name, message: m)) }
 		let payload: [String: Any] = ["protocol": 2, "hook": hook, "input": input]
 		guard let body = try? JSONSerialization.data(withJSONObject: payload, options: [.withoutEscapingSlashes]) else {
-			return fail("输入没法写成 JSON")
+			return fail(Texts.text("输入没法写成 JSON"))
 		}
 		let process = Process()
 		process.executableURL = URL(fileURLWithPath: expandPath(plugin.command[0]))
@@ -200,7 +204,7 @@ public final class PluginHost: Sendable {
 		do {
 			try process.run()
 		} catch {
-			return fail("启动不了（\(plugin.command[0])）：\(error.localizedDescription)")
+			return fail(Texts.text("启动不了（\(plugin.command[0])）：\(error.localizedDescription)"))
 		}
 		// 输出要边跑边读，插件写满管道缓冲区时才不会互相等死。
 		var outData = Data(), errData = Data()
@@ -226,15 +230,16 @@ public final class PluginHost: Sendable {
 			process.terminate()
 			if exited.wait(timeout: .now() + .milliseconds(300)) == .timedOut { kill(process.processIdentifier, SIGKILL) }
 			_ = readers.wait(timeout: .now() + .seconds(1))
-			return fail("超过 \(timeoutMs) 毫秒没回，已停掉")
+			return fail(Texts.text("超过 \(timeoutMs) 毫秒没回，已停掉"))
 		}
 		_ = readers.wait(timeout: .now() + .seconds(2))
 		guard let obj = (try? JSONSerialization.jsonObject(with: outData)) as? [String: Any] else {
 			let err = String(data: errData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-			return fail("回的不是 JSON（退出码 \(process.terminationStatus)）\(err.isEmpty ? "" : "：" + String(err.prefix(200)))")
+			let code = "\(process.terminationStatus)", detail = String(err.prefix(200))
+			return fail(err.isEmpty ? Texts.text("回的不是 JSON（退出码 \(code)）") : Texts.text("回的不是 JSON（退出码 \(code)）：\(detail)"))
 		}
 		if let message = obj["error"] as? String { return fail(message) }
-		guard let output = obj["output"] as? [String: Any] else { return fail("回的 JSON 里没有 output") }
+		guard let output = obj["output"] as? [String: Any] else { return fail(Texts.text("回的 JSON 里没有 output")) }
 		return .success(output)
 	}
 }

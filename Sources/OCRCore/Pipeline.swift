@@ -138,14 +138,14 @@ public final class OCREngine {
 		var image = original
 		if let region = options.region {
 			guard let cropped = crop(original, region), cropped.width > 0, cropped.height > 0 else {
-				throw OCRError.badArgument("region 裁出来是空的")
+				throw OCRError.badArgument(Texts.text("region 裁出来是空的"))
 			}
 			image = cropped
 		}
 		var lineOptions = LineOptions(correction: options.correction)
 		if let langs = options.languages, !langs.isEmpty {
 			lineOptions.languages = cjkFirst(langs)
-			if lineOptions.languages != langs { notes.append("指定的语言里中日韩的排到了最前：系统只用第一个语言的模型，英文放前面时汉字全认错") }
+			if lineOptions.languages != langs { notes.append(Texts.text("指定的语言里中日韩的排到了最前：系统只用第一个语言的模型，英文放前面时汉字全认错")) }
 		}
 		let preference = lineOptions.languages == nil ? options.languagePreference ?? languagePreference : .auto
 		let auto = options.mode == .auto
@@ -195,7 +195,8 @@ public final class OCREngine {
 				}
 				entry["signals"] = mine
 			case .failure(let f):
-				notes.append("\(f)，这一步按代码规则处理")
+				let failure = "\(f)"
+				notes.append(Texts.text("\(failure)，这一步按代码规则处理"))
 				entry["failed"] = f.message
 			}
 			entry["ms"] = Int(Date().timeIntervalSince(routeStarted) * 1000)
@@ -235,12 +236,12 @@ public final class OCREngine {
 					image = fixed.image
 					coordinateSpace = "rectified"
 					steps["rectified"] = ["kind": kind, "skewDegrees": round4(skew), "quad": quad.map(\.array)]
-					notes.append("先把纸拉正再认；结果里的坐标相对拉正后的图")
+					notes.append(Texts.text("先把纸拉正再认；结果里的坐标相对拉正后的图"))
 					lines = tidy(try recognizeLines(image, options: lineOptions)[0])
 					wantDoc = wantsDocument(lines, image)
 				}
 			} else if options.rectify == .on {
-				notes.append("没找到纸边，没有拉正")
+				notes.append(Texts.text("没找到纸边，没有拉正"))
 			}
 		}
 
@@ -272,7 +273,7 @@ public final class OCREngine {
 			// 认文档对小字比逐行差得多，只有竖排非它不可。
 			if auto && wantDoc && !signal("vertical") && !lines.isEmpty {
 				wantDoc = false
-				notes.append("字很小，切成 \(grid) 块细认；没走认文档，表格、分栏的结构没有保留")
+				notes.append(Texts.text("字很小，切成 \(grid) 块细认；没走认文档，表格、分栏的结构没有保留"))
 			}
 		} else if options.tiles == .auto && !big && (glyph ?? 0) < 14, let up = upscale(image, 2) {
 			let upLines = tidy(try recognizeLines(up, options: lineOptions)[0])
@@ -324,12 +325,12 @@ public final class OCREngine {
 				document = fused
 				mode = .document
 				if options.mode == .document && fused.claimed < 0.8 {
-					notes.append("逐行认出的字只有 \(Int(fused.claimed * 100))% 归进了认文档找到的版面，其余列在最后；可以用 mode=lines 对比")
+					notes.append(Texts.text("逐行认出的字只有 \(Int(fused.claimed * 100))% 归进了认文档找到的版面，其余列在最后；可以用 mode=lines 对比"))
 				}
 			} else if ruledForm {
-				notes.append("认文档没找到表格，页上却画着表格线：用的是逐行结果，按线围成的格子一排排读")
+				notes.append(Texts.text("认文档没找到表格，页上却画着表格线：用的是逐行结果，按线围成的格子一排排读"))
 			} else {
-				notes.append("认文档找到的版面只装得下逐行结果的 \(Int(fused.claimed * 100))%，改用逐行结果；表格、分栏的结构没有保留")
+				notes.append(Texts.text("认文档找到的版面只装得下逐行结果的 \(Int(fused.claimed * 100))%，改用逐行结果；表格、分栏的结构没有保留"))
 			}
 		}
 
@@ -348,7 +349,7 @@ public final class OCREngine {
 			text = joinLayout(layout, lines)
 			cleanText = joinLayout(layout, lines, markers: false)
 			if layout.position.contains(where: { $0 != nil }) {
-				notes.append("〔中间〕〔左侧〕这类标记不是认出来的字，是它下面那段字的大致位置（相对整张图；指定了区域时相对那块区域）；分成几栏时才标")
+				notes.append(Texts.text("〔中间〕〔左侧〕这类标记不是认出来的字，是它下面那段字的大致位置（相对整张图；指定了区域时相对那块区域）；分成几栏时才标"))
 			}
 		}
 
@@ -365,9 +366,9 @@ public final class OCREngine {
 		markSuspects(&ordered, skip: { l in tableBoxes.contains { $0.contains(l.box.center) } }, usePlugins: options.usePlugins, notes: &notes, steps: &steps)
 
 		if signal("curved") {
-			notes.append("图里可能有沿圆圈或弧线排列的字（印章之类），这部分系统认不准；可以把那块裁出来单独处理")
+			notes.append(Texts.text("图里可能有沿圆圈或弧线排列的字（印章之类），这部分系统认不准；可以把那块裁出来单独处理"))
 		}
-		if ordered.isEmpty && barcodes.isEmpty { notes.append("没认出字") }
+		if ordered.isEmpty && barcodes.isEmpty { notes.append(Texts.text("没认出字")) }
 
 		// 11. 给了 region 时坐标换算回整张原图。
 		var width = image.width, height = image.height
@@ -418,7 +419,8 @@ public final class OCREngine {
 				entry["reviewed"] = mine
 				entry["flagged"] = flagged
 			case .failure(let f):
-				notes.append("\(f)，可疑行只按系统可信度标")
+				let failure = "\(f)"
+				notes.append(Texts.text("\(failure)，可疑行只按系统可信度标"))
 				entry["failed"] = f.message
 			}
 			entry["ms"] = Int(Date().timeIntervalSince(started) * 1000)

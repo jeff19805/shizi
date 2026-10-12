@@ -277,17 +277,17 @@ public final class PhotoIndex: @unchecked Sendable {
 	func exec(_ sql: String) throws {
 		lock.lock()
 		defer { lock.unlock() }
-		guard sqlite3_exec(db, sql, nil, nil, nil) == SQLITE_OK else { throw OCRError.recognition("照片库：\(String(cString: sqlite3_errmsg(db)))") }
+		guard sqlite3_exec(db, sql, nil, nil, nil) == SQLITE_OK else { throw OCRError.recognition(Texts.text("照片库：\(String(cString: sqlite3_errmsg(db)))")) }
 	}
 
 	func run(_ sql: String, _ args: [Any?]) throws {
 		lock.lock()
 		defer { lock.unlock() }
 		var stmt: OpaquePointer?
-		guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { throw OCRError.recognition("照片库：\(String(cString: sqlite3_errmsg(db)))") }
+		guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { throw OCRError.recognition(Texts.text("照片库：\(String(cString: sqlite3_errmsg(db)))")) }
 		defer { sqlite3_finalize(stmt) }
 		bind(stmt, args)
-		guard sqlite3_step(stmt) == SQLITE_DONE else { throw OCRError.recognition("照片库：\(String(cString: sqlite3_errmsg(db)))") }
+		guard sqlite3_step(stmt) == SQLITE_DONE else { throw OCRError.recognition(Texts.text("照片库：\(String(cString: sqlite3_errmsg(db)))")) }
 	}
 
 	func query(_ sql: String, _ args: [Any?]) -> [Record] {

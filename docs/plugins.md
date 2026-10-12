@@ -43,8 +43,9 @@ A plugin is a separate small program. The core starts it for each call and write
 goes on with its own rules and adds a note to the result.
 
 The plugin process receives only a few environment variables (`HOME`, `LOGNAME`, `PATH`, `SHELL`, `TERM`, `USER`, `LANG`,
-`TMPDIR`, `LC_*`, `XDG_*`), plus `OCR_PLUGIN_NAME` (the entry's `name`) and the entry's `env`. Other environment variables, which
-may hold keys for other services, are not passed on.
+`TMPDIR`, `LC_*`, `XDG_*`), plus `OCR_PLUGIN_NAME` (the entry's `name`), `OCR_PLUGIN_LANGUAGE` (the language the core uses for
+everything people read, `en` or `zh-Hans`; write error messages and descriptions in it), and the entry's `env`. Other environment
+variables, which may hold keys for other services, are not passed on.
 
 | Hook | Input | Output |
 |---|---|---|

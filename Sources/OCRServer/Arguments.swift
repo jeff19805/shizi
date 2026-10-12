@@ -21,23 +21,23 @@ func parsePages(_ s: String) throws -> [Int] {
 		} else if ends.count == 2, let a = ends[0], let b = ends[1], a >= 1, b >= a {
 			out.append(contentsOf: a...b)
 		} else {
-			throw ArgumentError.invalid("pages 写法是 \"1-3,5\"，看不懂「\(part)」")
+			throw ArgumentError.invalid(Texts.text("pages 写法是 \"1-3,5\"，看不懂「\(part)」"))
 		}
 	}
-	guard !out.isEmpty else { throw ArgumentError.invalid("pages 是空的") }
+	guard !out.isEmpty else { throw ArgumentError.invalid(Texts.text("pages 是空的")) }
 	return out
 }
 
 func parseRegion(_ values: [Double]) throws -> NRect {
 	guard values.count == 4, values.allSatisfy({ $0 >= 0 && $0 <= 1 }), values[2] > 0, values[3] > 0 else {
-		throw ArgumentError.invalid("region 要四个 0–1 的数：[左, 上, 宽, 高]（左上角为原点）")
+		throw ArgumentError.invalid(Texts.text("region 要四个 0–1 的数：[左, 上, 宽, 高]（左上角为原点）"))
 	}
 	return NRect(x: values[0], y: values[1], w: values[2], h: values[3])
 }
 
 func parseEnum<T: RawRepresentable>(_ raw: String?, _ name: String, default value: T) throws -> T where T.RawValue == String {
 	guard let raw else { return value }
-	guard let v = T(rawValue: raw) else { throw ArgumentError.invalid("\(name) 不认识「\(raw)」") }
+	guard let v = T(rawValue: raw) else { throw ArgumentError.invalid(Texts.text("\(name) 不认识「\(raw)」")) }
 	return v
 }
 

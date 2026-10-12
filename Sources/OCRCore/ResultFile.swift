@@ -24,18 +24,18 @@ public final class ResultFile {
 		let jsonURL = withJSON ? markdownURL.deletingPathExtension().appendingPathExtension("json") : nil
 		let fm = FileManager.default
 		for url in [markdownURL] + (jsonURL.map { [$0] } ?? []) where fm.fileExists(atPath: url.path) {
-			throw OCRError.badArgument("\(url.path) 已经有了，不覆盖；换个文件名")
+			throw OCRError.badArgument(Texts.text("\(url.path) 已经有了，不覆盖；换个文件名"))
 		}
 		try fm.createDirectory(at: markdownURL.deletingLastPathComponent(), withIntermediateDirectories: true)
 		guard fm.createFile(atPath: markdownURL.path, contents: Data((header + "\n\n").utf8)) else {
-			throw OCRError.badArgument("写不了 \(markdownURL.path)")
+			throw OCRError.badArgument(Texts.text("写不了 \(markdownURL.path)"))
 		}
 		let md = try FileHandle(forWritingTo: markdownURL)
 		try md.seekToEnd()
 		var js: FileHandle?
 		if let jsonURL {
 			guard fm.createFile(atPath: jsonURL.path, contents: Data("{\"totalPages\":\(totalPages),\"pages\":[".utf8)) else {
-				throw OCRError.badArgument("写不了 \(jsonURL.path)")
+				throw OCRError.badArgument(Texts.text("写不了 \(jsonURL.path)"))
 			}
 			js = try FileHandle(forWritingTo: jsonURL)
 			try js?.seekToEnd()

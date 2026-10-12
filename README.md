@@ -67,7 +67,6 @@ Drag in or open an image or PDF, or paste a screenshot with ⌘V, and recognitio
   recognized text or by the image itself. First turn on "Classify photos" for a judgment plugin in Settings.
 - **Language**: English and Chinese. Shizi follows your system language: Chinese if your system language is Chinese, English
   otherwise. You can also pick one in Settings › Recognition › Interface; it takes effect after Shizi relaunches.
-  Notes inside recognition results (such as lines that may be misrecognized and layout position markers) are still in Chinese.
 - **Settings** (⌘,): recognition defaults, recognition language, interface language, and judgment plugins. Connect gives you
   the command for Claude Code and the configuration for other assistants, and sets up Lingxi, the author's own assistant,
   in one click.
@@ -99,7 +98,9 @@ Tools:
   It only reads the text Shizi stored and never touches your Photos library.
 - `ocr_status`: shows what this Mac can recognize, which plugins are configured, and whether they can be reached.
 
-Tool descriptions and the notes in results are in Chinese for now; AI assistants read them fine.
+Tool descriptions, replies, and the notes in results use the same language as the app: the server inside the app follows
+Shizi's interface language, and a server you build yourself follows your system language. A self-built server finds the English
+text in the repository's `scripts/app`; if you copy the binary somewhere else, it falls back to Chinese.
 
 Parameters of `ocr_image` and `ocr_to_file`:
 

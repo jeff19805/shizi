@@ -24,13 +24,13 @@ enum FileOutput {
 			return unique(directory.appendingPathComponent(name))
 		}
 		let path = expandPath(raw)
-		guard path.hasPrefix("/") else { throw ArgumentError.invalid("outputPath 要写绝对路径（可以用 ~）") }
+		guard path.hasPrefix("/") else { throw ArgumentError.invalid(Texts.text("outputPath 要写绝对路径（可以用 ~）")) }
 		var isDir: ObjCBool = false
 		if FileManager.default.fileExists(atPath: path, isDirectory: &isDir), isDir.boolValue {
 			return unique(URL(fileURLWithPath: path, isDirectory: true).appendingPathComponent(name))
 		}
 		guard path.hasSuffix(".md") else {
-			throw ArgumentError.invalid("outputPath 要以 .md 结尾（detail=full 时另写一份同名的 .json），或者是一个已有的文件夹")
+			throw ArgumentError.invalid(Texts.text("outputPath 要以 .md 结尾（detail=full 时另写一份同名的 .json），或者是一个已有的文件夹"))
 		}
 		return URL(fileURLWithPath: path)
 	}
@@ -79,17 +79,20 @@ enum FileOutput {
 	/// 写完以后的回复：文件在哪、多大、用了多久，可疑行几行，每页开头一句，说明，没写的页接着用什么 pages。
 	static func summary(_ file: ResultFile, totalPages: Int, remaining: [Int], seconds: Double) -> String {
 		var out: [String] = []
-		out.append("写好了：\(file.markdownURL.path)")
-		out.append("第 \(pageRanges(file.pages)) 页（文件一共 \(totalPages) 页），\(file.characters) 字，\(size(file.markdownURL))，用了 \(String(format: "%.1f", seconds)) 秒。")
-		if let json = file.jsonURL { out.append("JSON：\(json.path)（\(size(json))）") }
-		if file.suspects > 0 { out.append("可能认错的行 \(file.suspects) 行，文件里每页末尾列着，正文里原样保留。") }
+		out.append(Texts.text("写好了：\(file.markdownURL.path)"))
+		let took = String(format: "%.1f", seconds)
+		out.append(Texts.text("第 \(pageRanges(file.pages)) 页（文件一共 \(totalPages) 页），\(file.characters) 字，\(size(file.markdownURL))，用了 \(took) 秒。"))
+		// 没有汉字，但全角的冒号、括号英文里要换掉。
+		if let json = file.jsonURL { out.append(Texts.text("JSON：\(json.path)（\(size(json))）")) }
+		if file.suspects > 0 { out.append(Texts.text("可能认错的行 \(file.suspects) 行，文件里每页末尾列着，正文里原样保留。")) }
 		out.append("")
-		out.append("每页开头：")
+		out.append(Texts.text("每页开头："))
 		var used = 0
 		for (i, o) in file.openings.enumerated() {
-			let line = "第 \(o.page) 页　" + (o.text.count > 40 ? String(o.text.prefix(40)) + "…" : o.text.isEmpty ? "（没认出字）" : o.text)
+			let opening = o.text.count > 40 ? String(o.text.prefix(40)) + "…" : o.text.isEmpty ? Texts.text("（没认出字）") : o.text
+			let line = Texts.text("第 \(o.page) 页　\(opening)")
 			if used + line.utf8.count > openingsBudget {
-				out.append("……（其余 \(file.openings.count - i) 页见文件）")
+				out.append(Texts.text("……（其余 \(file.openings.count - i) 页见文件）"))
 				break
 			}
 			out.append(line)
@@ -97,12 +100,12 @@ enum FileOutput {
 		}
 		if !file.notes.isEmpty {
 			out.append("")
-			out.append("【说明】")
+			out.append(Texts.text("【说明】"))
 			out += file.notes.prefix(10).map { "- \($0)" }
 		}
 		if !remaining.isEmpty {
 			out.append("")
-			out.append("【一次最多写 \(maxPages) 页，这次写了第 \(pageRanges(file.pages)) 页；没写的接着用 pages=\"\(shortRanges(remaining))\"（会另写一个文件）】")
+			out.append(Texts.text("【一次最多写 \(maxPages) 页，这次写了第 \(pageRanges(file.pages)) 页；没写的接着用 pages=\"\(shortRanges(remaining))\"（会另写一个文件）】"))
 		}
 		return out.joined(separator: "\n")
 	}

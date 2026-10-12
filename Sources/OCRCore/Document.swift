@@ -77,7 +77,7 @@ public struct DocResult: Sendable {
 		}
 		for (i, t) in tables.enumerated() where !emitted.contains(i) { out.append(t.markdown) }
 		if !extras.isEmpty {
-			out.append("（以下是没归进版面的零散字，多半是公章、签名或手写）")
+			out.append(Texts.text("（以下是没归进版面的零散字，多半是公章、签名或手写）"))
 			out += extras.map(\.text)
 		}
 		return out.joined(separator: "\n")

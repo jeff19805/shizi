@@ -40,6 +40,45 @@ func normalizedKey(_ key: String) -> String {
 	return marked.replacingOccurrences(of: "%%", with: "%")
 }
 
+/// 多行字符串去缩进：开头 """ 后面那个换行不算，每行去掉跟结尾 """ 前面一样的缩进，结尾那行（只有缩进）不算。
+func dedent(_ body: String) -> String {
+	var lines = body.components(separatedBy: "\n")
+	guard lines.count >= 2 else { return body }
+	lines.removeFirst()
+	let indent = lines.removeLast()
+	return lines.map { $0.hasPrefix(indent) ? String($0.dropFirst(indent.count)) : $0 }.joined(separator: "\n")
+}
+
+/// 还原转义：\n、\t、\0、\"、\\、\u{…}；行末的 \（多行字符串里）接着下一行、不换行。
+func unescape(_ body: String) -> String {
+	let s = Array(body)
+	var out = "", k = 0
+	while k < s.count {
+		guard s[k] == "\\", k + 1 < s.count else {
+			out.append(s[k])
+			k += 1
+			continue
+		}
+		switch s[k + 1] {
+		case "n": out.append("\n")
+		case "t": out.append("\t")
+		case "0": out.append("\0")
+		case "\n": break
+		case "u":
+			if let open = s[k...].firstIndex(of: "{"), let end = s[open...].firstIndex(of: "}"),
+				let value = UInt32(String(s[open + 1..<end]), radix: 16), let scalar = Unicode.Scalar(value)
+			{
+				out.unicodeScalars.append(scalar)
+				k = end + 1
+				continue
+			}
+		default: out.append(s[k + 1])
+		}
+		k += 2
+	}
+	return out
+}
+
 struct SourceLiteral {
 	var line: Int
 	var text: String
@@ -48,7 +87,7 @@ struct SourceLiteral {
 }
 
 /// 源码里的字符串字面量：注释里的不算；插值 \(…) 换成 \u{0}；常见的转义还原成字。
-/// 多行字符串（"""）原样拿、不去缩进：界面代码里现在没有带中文的多行字符串。
+/// 多行字符串（"""）照 Swift 的规矩去掉每行前面跟结尾 """ 一样的缩进，行末的 \ 接着下一行：工具说明、命令行帮助都是这样写的。
 func stringLiterals(_ source: String) -> [SourceLiteral] {
 	let s = Array(source)
 	var out: [SourceLiteral] = []
@@ -58,46 +97,37 @@ func stringLiterals(_ source: String) -> [SourceLiteral] {
 		return j + t.count <= s.count && Array(s[j..<j + t.count]) == t
 	}
 	/// 读一个字面量，i 指着开头的引号（或原始字符串的 #）；返回字、读完停在哪、读到第几行。
+	/// 先原样收字（转义不还原，插值换成 \u{0}），多行的去完缩进再还原转义：行末的 \ 要在去缩进以后才接得对。
 	func read(_ start: Int, _ startLine: Int) -> (String, Int, Int) {
 		var j = start, line = startLine
 		let raw = s[j] == "#"
 		if raw { j += 1 }
-		let quote = starts(j, "\"\"\"") ? "\"\"\"" : "\""
-		let close = quote + (raw ? "#" : "")
-		j += quote.count
-		var text = ""
+		let multi = starts(j, "\"\"\"")
+		let close = (multi ? "\"\"\"" : "\"") + (raw ? "#" : "")
+		j += multi ? 3 : 1
+		var body: [Character] = []
 		while j < s.count {
-			if starts(j, close) { return (text, j + close.count, line) }
-			let c = s[j]
-			if c == "\n" { line += 1 }
-			if c == "\\" && !raw && j + 1 < s.count {
-				let n = s[j + 1]
-				switch n {
-				case "(":
+			if starts(j, close) {
+				j += close.count
+				break
+			}
+			if s[j] == "\n" { line += 1 }
+			if s[j] == "\\" && !raw && j + 1 < s.count {
+				if s[j + 1] == "(" {
 					j = skipInterpolation(j + 2)
-					text.append("\u{0}")
+					body.append("\u{0}")
 					continue
-				case "n": text.append("\n")
-				case "t": text.append("\t")
-				case "0": text.append("\0")
-				case "\"", "\\", "'": text.append(n)
-				case "u":
-					if let open = s[j...].firstIndex(of: "{"), let end = s[open...].firstIndex(of: "}"),
-						let value = UInt32(String(s[open + 1..<end]), radix: 16), let scalar = Unicode.Scalar(value)
-					{
-						text.unicodeScalars.append(scalar)
-						j = end + 1
-						continue
-					}
-				default: text.append(n)
 				}
+				body += [s[j], s[j + 1]]
 				j += 2
 				continue
 			}
-			text.append(c)
+			body.append(s[j])
 			j += 1
 		}
-		return (text, j, line)
+		var text = String(body)
+		if multi { text = dedent(text) }
+		return (raw ? text : unescape(text), j, line)
 	}
 	/// 跳过插值：数括号，里面的字符串整个跳过（插值里也会有带引号的字）。
 	func skipInterpolation(_ start: Int) -> Int {
@@ -139,19 +169,30 @@ func stringLiterals(_ source: String) -> [SourceLiteral] {
 	return out
 }
 
-/// 界面代码里的全部字面量：文件名:行号 → 字。
-private func uiLiterals() throws -> [(place: String, text: String, prefix: String)] {
-	let dir = repoRoot.appendingPathComponent("Sources/ShiziKit")
-	let files =
-		try FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil)
-		.filter { $0.pathExtension == "swift" && !skippedFiles.contains($0.lastPathComponent) }
-		+ [repoRoot.appendingPathComponent("Sources/Shizi/ShiziApp.swift")]
+/// 这几个文件夹里全部的字面量：文件名:行号 → 字。
+private func literals(in folders: [String]) throws -> [(place: String, text: String, prefix: String)] {
 	var out: [(String, String, String)] = []
-	for file in files.sorted(by: { $0.path < $1.path }) {
-		let source = try String(contentsOf: file, encoding: .utf8)
-		out += stringLiterals(source).map { ("\(file.lastPathComponent):\($0.line)", $0.text, $0.prefix) }
+	for folder in folders {
+		let dir = repoRoot.appendingPathComponent(folder)
+		let files = try FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil)
+			.filter { $0.pathExtension == "swift" && !skippedFiles.contains($0.lastPathComponent) }
+		for file in files.sorted(by: { $0.path < $1.path }) {
+			let source = try String(contentsOf: file, encoding: .utf8)
+			out += stringLiterals(source).map { ("\(file.lastPathComponent):\($0.line)", $0.text, $0.prefix) }
+		}
 	}
 	return out
+}
+
+/// App 界面的代码：里面带汉字的字面量都是界面上的字（不是的列在 untranslated）。
+private func uiLiterals() throws -> [(place: String, text: String, prefix: String)] {
+	try literals(in: ["Sources/ShiziKit", "Sources/Shizi"])
+}
+
+/// 识别核心、MCP 服务、判定插件：里面的中文很多不是给人看的（发给判定服务的题目、匹配用的字表、默认的分类类别），
+/// 所以不查全部带汉字的字，只查写成 Texts.text("…") 的；漏包的靠 EnglishOutputTests 在英文下跑一遍查。
+private func coreLiterals() throws -> [(place: String, text: String, prefix: String)] {
+	try literals(in: ["Sources/OCRCore", "Sources/OCRServer", "Sources/ocr-plugin-systemone"])
 }
 
 /// 带汉字、要翻的：原样显示的（verbatim）、存设置的键（「拾字.」开头）、不翻名单里的不算。
@@ -169,10 +210,16 @@ private func chineseUILiterals() throws -> [(place: String, text: String)] {
 		let b = String(localized: "文件：\(name.isEmpty ? "无名" : name)，第 \(n) 页")
 		let c = Text(verbatim: "简体中文")
 		let d = "引号\"里\"的字\n换行"
+		let e = Texts.text("""
+			多行第一行
+			第二行 \(n) 页，\
+			接着写
+			""")
 		"""#
 	let found = stringLiterals(source).filter { hasHan($0.text) }
-	#expect(found.map(\.text) == ["共 \u{0} 张", "文件：\u{0}，第 \u{0} 页", "简体中文", "引号\"里\"的字\n换行"])
-	#expect(found.map(\.line) == [2, 3, 4, 5])
+	#expect(found.map(\.text) == ["共 \u{0} 张", "文件：\u{0}，第 \u{0} 页", "简体中文", "引号\"里\"的字\n换行", "多行第一行\n第二行 \u{0} 页，接着写"])
+	#expect(found.map(\.line) == [2, 3, 4, 5, 6])
+	#expect(found[4].prefix.hasSuffix("Texts.text("))
 	#expect(found[2].prefix.hasSuffix("verbatim: "))
 	#expect(normalizedKey("文件：%@，第 %lld 页") == "文件：\u{0}，第 \u{0} 页" && normalizedKey("100%% %lld") == "100% \u{0}")
 	#expect(formatSpecifiers("%2$@ of %1$lld (100%%)") == ["@", "lld"])
@@ -202,10 +249,19 @@ private func chineseUILiterals() throws -> [(place: String, text: String)] {
 	)
 }
 
+@Test func 识别核心和MCP服务里要翻的字都有英文() throws {
+	let table = try #require(NSDictionary(contentsOf: englishTable) as? [String: String])
+	let keys = Set(table.keys.map(normalizedKey))
+	let wrapped = try coreLiterals().filter { $0.prefix.hasSuffix("Texts.text(") }
+	#expect(!wrapped.isEmpty)
+	let missing = wrapped.filter { !keys.contains($0.text) }.map { "\($0.place) \($0.text.replacingOccurrences(of: "\u{0}", with: "%…"))" }
+	#expect(missing.isEmpty, "这些 Texts.text 的字没有英文：加进 scripts/app/en.lproj/Localizable.strings：\n\(missing.joined(separator: "\n"))")
+}
+
 @Test func 对照表里没有用不上的英文() throws {
 	let table = try #require(NSDictionary(contentsOf: englishTable) as? [String: String])
 	// 只有标点的（拼句子用的「、」「：」）也算用到：代码里写成 String(localized: "、") 的字面量都在这里面。
-	let used = Set(try uiLiterals().map(\.text))
+	let used = Set(try uiLiterals().map(\.text) + coreLiterals().map(\.text))
 	let unused = table.keys.filter { !used.contains(normalizedKey($0)) }.sorted()
 	#expect(unused.isEmpty, "界面代码里已经没有这些字了，对照表里删掉：\n\(unused.joined(separator: "\n"))")
 }

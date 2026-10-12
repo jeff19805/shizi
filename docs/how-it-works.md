@@ -47,7 +47,7 @@ top left.
      as a cell, and is split as if there were no printed lines. Pages without printed lines are still read line by line.
    - When a page is split into several columns, each paragraph starts with its rough position on the page, such as 〔中间〕 (middle)
      or 〔左侧〕 (left), so that a model that can't see the image still knows where the text is; a note at the end of the result
-     says these markers aren't recognized text.
+     says these markers aren't recognized text. In English output the markers read 〔middle〕, 〔left〕, and so on.
 7. Lines at the system's lowest confidence level, and lines found only by document mode (where line-by-line found nothing; mostly
    seals and signatures), are marked as suspicious. With a plugin, the longer suspicious lines are sent to it for review.
 

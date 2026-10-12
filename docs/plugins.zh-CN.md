@@ -40,7 +40,8 @@
 超时、出错、回的不是 JSON，一律当这一步没有插件，照常按代码规则走，并在结果的说明里写一句。
 
 插件进程只拿到几个环境变量（`HOME`、`LOGNAME`、`PATH`、`SHELL`、`TERM`、`USER`、`LANG`、`TMPDIR`、`LC_*`、`XDG_*`），
-加上 `OCR_PLUGIN_NAME`（这一项的 `name`）和这一项的 `env`；别的环境变量（里面可能有别的服务的密钥）不传。
+加上 `OCR_PLUGIN_NAME`（这一项的 `name`）、`OCR_PLUGIN_LANGUAGE`（核心给人看的字用的语言，`en` 或 `zh-Hans`，出错和说明照它写）
+和这一项的 `env`；别的环境变量（里面可能有别的服务的密钥）不传。
 
 | 口子 | 输入 | 输出 |
 |---|---|---|
