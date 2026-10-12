@@ -1,0 +1,121 @@
+#!/bin/sh
+# 提交前做两件事（规矩写在 AGENTS.md「提交」一节）：
+#   1. 改了程序（Sources/ 或 Package.swift）的提交，CHANGELOG.md「## [未发布]」下面必须写了东西并已暂存；
+#      只改文档、测试、脚本的不用。不改行为的重构可以 SKIP_CHANGELOG=1 git commit …
+#   2. 版本号 0.0.x 每次提交 +1，写进 VERSION 和 Sources/OCRCore/Version.swift；「未发布」那段落成这个版本号。
+#      这次提交手动改过 VERSION（比如跳到 0.1.0）就照它的；改上一次提交（--amend）不再进位。
+# 改文件时直接写暂存区（git hash-object + update-index），再同步到工作区，不碰别的没暂存的改动。
+set -eu
+
+root=$(git rev-parse --show-toplevel)
+cd "$root"
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+
+staged=$(git diff --cached --name-only)
+[ -n "$staged" ] || exit 0
+
+fail() {
+	printf '提交被拦下：%s\n' "$1" >&2
+	exit 1
+}
+
+# 钩子要改的三个文件不能有没暂存的改动，否则暂存区和工作区会对不上。
+for f in VERSION Sources/OCRCore/Version.swift CHANGELOG.md; do
+	if [ -e "$f" ] && ! git diff --quiet -- "$f"; then
+		fail "$f 有没暂存的改动。先 git add $f（或撤掉那些改动）再提交。"
+	fi
+done
+
+# 「未发布」一节里的非空行。
+unreleased() {
+	git show :CHANGELOG.md 2>/dev/null | awk '/^## \[未发布\]/ { f = 1; next } /^## / { f = 0 } f && NF' || true
+}
+
+# 1. 先算出这次的版本号（还不写）。
+version_at() { git show "$1:VERSION" 2>/dev/null | tr -d ' \r\n' || true; }
+amend=0
+case "$(ps -o args= -p "$PPID" 2>/dev/null || true)" in
+*--amend*) amend=1 ;;
+esac
+head_version=$(version_at HEAD)
+staged_version=$(git show :VERSION 2>/dev/null | tr -d ' \r\n' || true)
+if [ -n "$staged_version" ] && [ "$staged_version" != "$head_version" ] && [ "$staged_version" != "0.0.0" ]; then
+	new=$staged_version
+else
+	if [ "$amend" = 1 ]; then base=$(version_at HEAD~1); else base=$head_version; fi
+	[ -n "$base" ] || base=0.0.0
+	new=$(printf '%s\n' "$base" | awk -F. '{ printf "%d.%d.%d", $1, $2, $3 + 1 }')
+fi
+printf '%s\n' "$new" | grep -E -q '^[0-9]+\.[0-9]+\.[0-9]+$' || fail "VERSION 里的版本号「$new」不是 主.次.修订 的样子。"
+
+# 2. CHANGELOG。「未发布」写了东西，或者已经有这个版本号的标题（上次提交到一半取消时落下的、或 --amend 时原提交里的）都算同步了。
+stamped() { git show :CHANGELOG.md 2>/dev/null | grep -F -q "## [$new]"; }
+program=$(printf '%s\n' "$staged" | grep -E '^(Sources/|Package\.swift$)' | grep -v -x 'Sources/OCRCore/Version.swift' || true)
+if [ -n "$program" ] && [ "${SKIP_CHANGELOG:-}" != "1" ] && [ -z "$(unreleased)" ] && ! stamped; then
+	{
+		echo "提交被拦下：这次改了程序，但 CHANGELOG.md 的「## [未发布]」下面是空的（或没暂存）："
+		printf '%s\n' "$program" | sed 's/^/  /'
+		echo "写上改了什么、对使用有什么影响，git add CHANGELOG.md 再提交。"
+		echo "只改文档、测试、脚本的提交不用写；不改行为的重构可以 SKIP_CHANGELOG=1 git commit …"
+	} >&2
+	exit 1
+fi
+
+# 3. 写版本号。put 同时写进暂存区和工作区。
+put() {
+	blob=$(git hash-object -w "$2")
+	git update-index --add --cacheinfo "100644,$blob,$1"
+	mkdir -p "$(dirname "$1")"
+	cp "$2" "$1"
+}
+
+printf '%s\n' "$new" >"$tmp/VERSION"
+put VERSION "$tmp/VERSION"
+cat >"$tmp/Version.swift" <<EOF
+// 由提交钩子（.githooks/pre-commit）按 VERSION 生成，别手改。
+public enum OCRVersion {
+	public static let current = "$new"
+}
+EOF
+put Sources/OCRCore/Version.swift "$tmp/Version.swift"
+
+# 4. 「未发布」落成这个版本号：条目挪到新的版本标题下面，「未发布」留空。
+#    改上一次提交时这个版本的标题已经有了，就把新条目接在它下面，不重复加标题。
+if [ -n "$(unreleased)" ]; then
+	day=$(TZ="${CHANGELOG_TZ:-Asia/Shanghai}" date +%Y-%m-%d)
+	cat >"$tmp/stamp.awk" <<'EOF'
+{ line[NR] = $0 }
+END {
+	u = 0
+	for (i = 1; i <= NR; i++) if (line[i] ~ /^## \[未发布\]/) { u = i; break }
+	if (u == 0) { for (i = 1; i <= NR; i++) print line[i]; exit }
+	for (e = u + 1; e <= NR; e++) if (line[e] ~ /^## /) break
+	n = 0
+	for (k = u + 1; k < e; k++) { if (n == 0 && line[k] ~ /^[ \t]*$/) continue; item[++n] = line[k] }
+	while (n > 0 && item[n] ~ /^[ \t]*$/) n--
+	v = 0
+	for (k = e; k <= NR; k++) if (index(line[k], "## [" ver "]") == 1) { v = k; break }
+	for (k = 1; k <= u; k++) print line[k]
+	print ""
+	if (v == 0) {
+		print "## [" ver "] - " day
+		print ""
+		for (k = 1; k <= n; k++) print item[k]
+		if (e <= NR) print ""
+		for (k = e; k <= NR; k++) print line[k]
+	} else {
+		for (k = e; k <= v; k++) print line[k]
+		print ""
+		for (k = 1; k <= n; k++) print item[k]
+		k = v + 1
+		while (k <= NR && line[k] ~ /^[ \t]*$/) k++
+		for (; k <= NR; k++) print line[k]
+	}
+}
+EOF
+	git show :CHANGELOG.md | awk -v ver="$new" -v day="$day" -f "$tmp/stamp.awk" >"$tmp/CHANGELOG.md"
+	put CHANGELOG.md "$tmp/CHANGELOG.md"
+fi
+
+printf '版本号 %s\n' "$new" >&2

@@ -1,0 +1,9 @@
+.build/
+bench/out/
+*.xcodeproj
+.DS_Store
+.vscode/
+.swiftpm/
+scripts/app/signing.env
+docs/plans/
+docs/reviews/
