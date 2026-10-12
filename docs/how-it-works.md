@@ -1,88 +1,136 @@
-# 拾字怎么认
+# How Shizi recognizes text
 
-[README](../README.zh-CN.md) 讲怎么用，这里讲自动模式怎么决定认法、为什么这么认：给想知道结果为什么是这样、或者想改代码的人看。
-坐标一律 0–1、左上角为原点。
+English | [简体中文](how-it-works.zh-CN.md)
 
-## 自动模式的几步
+The [README](../README.md) covers how to use Shizi. This page explains how automatic mode decides how to recognize a page, and
+why, for anyone who wants to understand the results or change the code. Coordinates always run from 0 to 1, with the origin at the
+top left.
 
-0. PDF 的页先看能不能用它自带的字（见下面「PDF 自带的字」）：能用就不认图，只认页上的插图。下面是认图的步骤。
-1. 有判定插件就先让它看图，跟第一遍识别同时进行。
-2. 整张图逐行认一遍。语言照「识别语言」：自动判断由系统一行行判断；中文优先先按中文认，西文页、中文认不了的页改回自动判断（见下面「识别语言」）。
-3. 纸明显歪了、四边形没贴着图片边框、而且九成五的字都在纸里，才先拉正（没插件时，还得是要认文档的页，条件见第 5 步；有插件时它说是拍的照片也行）。
-   平放扫描的纸找不到真正的纸边，找到的常是贴着边框的表格块，不拉。拉正后的坐标相对拉正后的图，结果里 `coordinateSpace` 会写明。
-4. 字太小：大图（超过约 250 万像素）切成边长约 1000 像素的块细认，切开的长行在接缝处拼回去；整张图歪着的先转正再切。
-   小图放大一倍再认，明显更好才换。
-5. 有表格、分栏、竖排（插件说的或代码看出来的），或者一个字都没认出，就再「认文档」一遍，跟逐行结果合并：
-   版面（表格格子、段落、阅读顺序）用认文档的，字换成落在每块里的逐行结果。
-   - 两边至少一半的字对得上才换，空格子直接补上，哪块都不在的行列在最后。
-   - 逐行的字八成以上归得进它的版面、而且它自己认出九成的字或找到了表格，才用它的版面。
-   - 插件说有表格它却没找到表格，不用它的版面：它会把表格一列一列打乱。
-   - 它没找到表格、逐行的行却有一半以上装在画了线的格子里（还有格子里不止一行），也不用：它会按段落一栏栏地出。改按下一步的格子读。
-   - 认文档的最小字高设成图高的 1/64：系统默认的 1/32 在扫描件上像是先把图缩小再认，表格认不全。
-6. 不用认文档的版面时，逐行结果按大片空白切成块：侧栏、正文、弹窗分开，块之间空一行；左右两边一行对一行的（表格、「标签：值」表单）不切。
-   - 页上有并排的字时，先找画的黑色横竖长线（红章、蓝字不算；压在字中间的笔画、删除线筛掉），四面有线围着的行算一格：
-     同一格的行不分到两块里，栏缝里是格子的墙也不切；块里按格子一排排读，格里从上往下（一排格子都只有一行时拼成一行）。
-   - 框里的字自己又分成左右两栏、各三行以上的（整页外面套的框）不算格子，照没画线时切。没画线的照旧一行行排。
-   - 页面切出了几栏时，每段开头标上它在页面上的大致位置（「〔中间〕」「〔左侧〕」之类），让看不到图的模型也知道这段字在页面哪里；
-     结果末尾的说明会写明这些标记不是认出来的字。
-7. 系统可信度最低一档的行、只有认文档认出的行（逐行在那儿什么都没认出，多是公章、签名）标成可疑；有插件时，长一点的可疑行交给它复核。
+## The steps of automatic mode
 
-**为什么两种认法合在一起**：认文档认得出表格和段落，可在扫描件上字差（形近字认错、序号整列丢）；逐行识别字准，可不懂表格，顺序会乱。
-合并以后，版面和字各取所长。
+0. For a PDF page, Shizi first checks whether the page's own text can be used (see "A PDF's own text" below). If it can, the page
+   isn't recognized as an image; only the images on it are. The steps below are for recognizing an image.
+1. If a judgment plugin is configured, it checks the image first, in parallel with the first recognition pass.
+2. The whole image is recognized line by line. The language follows the recognition language setting: in automatic mode the system
+   decides line by line; Chinese First recognizes text as Chinese first, and falls back to automatic on pages in Western languages
+   or with text Chinese can't read (see "Recognition language" below).
+3. A page is straightened first only if the paper is clearly tilted, the detected quadrilateral doesn't hug the image border, and
+   95% of the text lies inside the paper. Without a plugin, the page must also need document recognition (see step 5); with a
+   plugin, the plugin saying it's a photo also counts. A sheet scanned flat has no real paper edge to find: what gets found is
+   usually a table block touching the border, so it isn't straightened. After straightening, coordinates are relative to the
+   straightened image, and the result's `coordinateSpace` says so.
+4. Small text: a large image (over about 2.5 million pixels) is split into tiles about 1000 pixels on a side and recognized in detail,
+   and long lines cut by tile edges are joined back together; an image that is tilted as a whole is rotated upright before splitting.
+   A small image is recognized again at double size, and that result is used only if it's clearly better.
+5. If there are tables, columns, or vertical text (reported by the plugin or detected by the code), or no text was found at all,
+   the page is recognized again in document mode and merged with the line-by-line result: the layout (table cells, paragraphs,
+   reading order) comes from document mode, and the text in each block is replaced with the line-by-line text that falls inside it.
+   - Text is replaced only where at least half of it matches on both sides; empty cells are filled in directly, and lines that
+     fall in no block are listed at the end.
+   - Document mode's layout is used only if more than 80% of the line-by-line text fits into it, and document mode itself
+     recognized 90% of the text or found a table.
+   - If the plugin reports a table but document mode found none, its layout isn't used: it would scramble the table column by column.
+   - If document mode found no table but more than half of the lines sit in cells enclosed by printed lines (with more than one line
+     in some cell), its layout isn't used either: it would output the page paragraph by paragraph, one column at a time.
+     The page is read by cells as in step 6 instead.
+   - Document mode's minimum text height is set to 1/64 of the image height: with the system default of 1/32, scans seem to be
+     shrunk before recognition, and parts of tables are lost.
+6. When document mode's layout isn't used, the line-by-line result is split into blocks at large blank areas: sidebars, body text,
+   and dialogs are separated, with a blank line between blocks. Left and right sides that line up row by row (tables,
+   "label: value" forms) aren't split.
+   - When a page has text side by side, Shizi first looks for long black horizontal and vertical lines (red seals and blue ink don't
+     count; strokes through the middle of text and strikethroughs are filtered out). Lines enclosed on all four sides form a cell:
+     the lines of one cell are never split into different blocks, and a gutter that is a cell wall isn't cut either. Inside a block,
+     cells are read row by row, each cell from top to bottom (when every cell in a row has one line only, the row is joined into
+     one line).
+   - A frame whose text splits into left and right columns of three or more lines each (a frame around the whole page) doesn't count
+     as a cell, and is split as if there were no printed lines. Pages without printed lines are still read line by line.
+   - When a page is split into several columns, each paragraph starts with its rough position on the page, such as 〔中间〕 (middle)
+     or 〔左侧〕 (left), so that a model that can't see the image still knows where the text is; a note at the end of the result
+     says these markers aren't recognized text.
+7. Lines at the system's lowest confidence level, and lines found only by document mode (where line-by-line found nothing; mostly
+   seals and signatures), are marked as suspicious. With a plugin, the longer suspicious lines are sent to it for review.
 
-**为什么表格按画的线读**：光看行框，分不清「一格里折成三行」和「三排各一行」，左右几格的第二行会被拼成一行；纸上画的线能把它们分开。
-没画线的照旧一行行排，不按缝宽、对齐去猜着并格子：收据、紧排的键值表会被出成一整列品名、再一整列价钱。
+**Why combine the two modes**: document mode recognizes tables and paragraphs, but its text is poor on scans (look-alike characters
+get confused, whole columns of numbers go missing). Line-by-line recognition gets the text right but knows nothing about tables, so
+the order gets scrambled. Merged, the layout comes from one and the text from the other.
 
-## PDF 自带的字
+**Why tables are read along printed lines**: line boxes alone can't tell "one cell wrapped onto three lines" from "three rows of one
+line each", so the second lines of neighboring cells get joined into one line; the lines printed on the paper tell them apart.
+Pages without printed lines are still read line by line, without guessing cells from gaps and alignment: that would turn receipts
+and tight key-value tables into one column of item names followed by one column of prices.
 
-Word、浏览器导出的 PDF 里本来就有字，直接用；里面的插图、流程图、截图另外认（同一张图在同一位置、画出来也一样的只认一次，比如每页的页眉标志）。
-自带的字不能拿来就用，每页先看画了什么（只数不解码）：
+## A PDF's own text
 
-| 页上有什么 | 怎么认 |
+PDFs exported from Word or a browser already contain their text, and Shizi uses it directly; images, flowcharts, and screenshots
+inside them are recognized separately (an image that appears at the same position and renders the same is recognized only once,
+such as a logo in every page header). The text can't be used blindly, so each page is first checked for what it draws (counted,
+not decoded):
+
+| What's on the page | How it is recognized |
 |---|---|
-| 没有画字（扫描件、矢量图） | 认图 |
-| 只有隐形的字（扫描仪、Acrobat 给扫描件加的 OCR 层） | 不用它的层，自己认图（结果的说明里写一句） |
-| 可见的字上又叠了一层隐形的字，隐形的至少有可见的一半（数字 PDF 又被人 OCR 过，字会重复一份） | 认图（写一句） |
-| 图片盖住一半以上（流程图、扫描件上加了页眉页码） | 认图 |
-| 其余的数字页 | 用自带的字，图片区另外认 |
+| No drawn text (scans, vector drawings) | As an image |
+| Only invisible text (an OCR layer that a scanner or Acrobat added to a scan) | Its layer is ignored and the page is recognized as an image (with a note in the result) |
+| Invisible text on top of visible text, at least half as much as the visible text (a digital PDF that was OCRed again, so the text would appear twice) | As an image (with a note) |
+| Images covering more than half the page (flowcharts, scans with headers and page numbers added) | As an image |
+| Any other digital page | Its own text, with image areas recognized separately |
 
-另外两道检查：
+Two more checks:
 
-- 乱码（字体没带编码表）超过 2% 的页认图。
-- 抽查：OCR 一条横条，跟自带的字对不上八成的页认图。抽查的是一份文件里某种字体头一回大量出现的页
-  （拼起来的 PDF 每段字体不一样；对不上的字体，后面用到它的页都认图），还有白底上画了白字的页（看不见的字，可能是垫的一层假字；红底白字这种不用查）。
+- Pages where more than 2% of the text is garbled (a font without an encoding table) are recognized as images.
+- Spot checks: a horizontal strip is OCRed and compared with the page's text, and a page where less than 80% matches is recognized
+  as an image. Spot checks run on pages where a font first appears in quantity (each part of a merged PDF uses different fonts;
+  once a font fails, every later page using it is recognized as an image), and on pages with white text drawn on a white background
+  (invisible text, possibly a fake layer underneath; white text on a red background doesn't need checking).
 
-其余几条：
+Also:
 
-- 资源写在上级页面树里的 PDF 也看得见图。页上的二维码、条码每页都找，矢量画的、很小的图里的也找得到。
-- 框选（拾字里框一块、MCP 传 `region`）按框取字，框住半行就只给半行；框到插图上才认图。被裁剪框切过的行只留框里那截。
-- 浏览器导出的 PDF 同一行常被拆成好几段，按位置拼回一行；行的先后照 PDFKit 排好的整页文字（Word、浏览器导出的一般就是阅读顺序），段与段之间空一行。
-- 认法选了「认文档」（要表格结构，自带的字里没有）、设置里关了「PDF 里有文字时直接用」、MCP 传 `textLayer: false` 时，都认图。
-- 已知的毛病：浏览器导出的中文 PDF 偶尔有一个字 PDFKit 找不到位置，这个字照 PDF 里的顺序放在页末、没有框。
+- Images are found even in PDFs that declare resources in a parent node of the page tree. QR codes and barcodes are detected on
+  every page, including vector-drawn ones and those in very small images.
+- Selecting an area (drawing a box in Shizi, or `region` over MCP) takes the text inside the box, so selecting half a line gives half
+  a line; images are recognized only when the box covers one. Lines cut by the crop box keep only the part inside it.
+- PDFs exported from browsers often split one line into several pieces; they are joined back by position. Lines follow the page text
+  as ordered by PDFKit (usually the reading order for Word and browser exports), with a blank line between paragraphs.
+- Pages are recognized as images when the recognition mode is Document (it needs the table structure, which a PDF's own text
+  doesn't have), when "Use a PDF’s text layer when it has one" is turned off in Settings, or when MCP passes `textLayer: false`.
+- Known issue: in Chinese PDFs exported from browsers, PDFKit occasionally can't locate one character; it is placed at the end of
+  the page in PDF order, without a box.
 
-## 识别语言
+## Recognition language
 
-不指定语言时，系统一行一行地判断用哪种语言的模型：字母、数字多的行用西文模型，行里的汉字会认成乱码；
-短的中文常被当成日文（「出错」认成「出錯」）。英文哪个模型都认得，所以看起来对英文特别灵。
+Without a specified language, the system decides line by line which language model to use. Lines with many letters and digits get a
+Western model, which turns the Chinese in them into gibberish, and short Chinese is often taken for Japanese (「出错」 comes out as
+「出錯」). English reads fine with any model, which is why recognition seems especially good at English.
 
-「中文优先」先按中文认（中文模型也认英文、数字），这两种情况改回自动判断：
+Chinese First recognizes everything as Chinese first (the Chinese model also reads English and digits) and falls back to automatic
+in two cases:
 
-- 整页几乎没有汉字（英文、西班牙文……）：按中文认会丢掉 á、ñ 这类字母，也更慢。
-- 有中文认不了的字：韩文、日文按中文认什么都不出。
+- The page has almost no Chinese characters (English, Spanish, …): recognizing it as Chinese would drop letters such as á and ñ,
+  and is slower.
+- The page has text Chinese can't read: Korean and Japanese recognized as Chinese come out empty.
 
-一份 PDF 记住上一页的结论，西文 PDF 只有第一页多认一遍；接在西文页后面的页，字少的、有汉字的还会再按中文试一遍，换得回中文。
-英文、代码里被认成全角的标点改回半角；有汉字的行只改夹在英文字母、数字中间的（「请使用 API！」「推荐 Mac（Intel）版本」不改）。
+A PDF remembers the previous page's conclusion, so a Western PDF is recognized twice only on its first page. Pages that follow a
+Western page and have little text or contain Chinese are tried as Chinese again, so a document can switch back.
+Punctuation in English and code that was recognized as full-width is changed back to half-width; in lines with Chinese, only
+punctuation between English letters and digits is changed (「请使用 API！」 and 「推荐 Mac（Intel）版本」 stay as they are).
 
-代价：中文模型认英文有小毛病（撇号后少空格、Ive 认成 lve、® 认成 @），英文为主的单张图要多认一遍。所以默认还是自动判断。
+The cost: the Chinese model makes small mistakes in English (a missing space after an apostrophe, "Ive" read as "lve", "®" read
+as "@"), and single images that are mostly English are recognized twice. That's why automatic remains the default.
 
-指定语言（MCP 的 `languages` 给具体的语言）时，系统只用列表里第一个语言的模型，所以中日韩的排到最前。
+When languages are specified (concrete languages in the MCP `languages` parameter), the system uses only the first language's
+model, so Chinese, Japanese, and Korean are moved to the front.
 
-## MCP 的回复
+## MCP replies
 
-- 一次回复最多约 45 KB、1800 行：有的客户端只给模型看工具结果的前 50 KB 或 2000 行，多的直接截掉。多页 PDF 放不下时在整页处停，
-  末尾写明「这次给了第 1-9 页……没给的接着用 pages="10-32"」，照着再调一次就行；一页就超的只给前面一部分，可以用 `region` 分块认。
-- `detail: "full"` 的 JSON 放在回复的第二块文字里，不放 `structuredContent`：有的客户端只看文字块，有的（比如 Claude Code）有
-  `structuredContent` 时只看它、把文字块扔掉，放两块文字，两边看到的才一样。它也算在上面的上限里，所以多页的 full 一次只给一两页。
-- JSON 里字是正的行只有 `box`；斜着、倒着的行另有 `quad`（四个角，顺序跟着字的走向）。
-- `ocr_to_file` 每页的写法跟 `ocr_image` 的回复一样，`full` 时另写一份同名的 `.json`；不覆盖已有的文件；
-  客户端带了进度令牌（`progressToken`）时，每认完一页报一次进度。
+- A reply holds at most about 45 KB and 1800 lines, because some clients show the model only the first 50 KB or 2000 lines of a
+  tool result and cut the rest. When a multi-page PDF doesn't fit, the reply stops at a page boundary and ends with a note on which
+  pages it covered and what to pass as `pages` for the rest (such as `pages="10-32"`), so you can simply call again. A single page
+  that is too long is truncated; you can recognize it in parts with `region`.
+- The `detail: "full"` JSON goes in a second text block of the reply, not in `structuredContent`: some clients read only text
+  blocks, while others (such as Claude Code) read only `structuredContent` when it is present and drop the text blocks. With two
+  text blocks, both see the same thing. The JSON counts toward the limit above, so a multi-page `full` reply holds only one or two
+  pages.
+- In the JSON, upright lines have only a `box`; tilted and upside-down lines also have a `quad` (four corners, in the direction the
+  text runs).
+- `ocr_to_file` writes each page the same way as an `ocr_image` reply, plus a `.json` file with the same name for `full`, and never
+  overwrites existing files. When the client sends a progress token (`progressToken`), progress is reported after each page.

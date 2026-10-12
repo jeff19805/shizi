@@ -4,6 +4,10 @@
 
 ## [未发布]
 
+## [0.0.42] - 2026-10-12
+
+- 原理（docs/how-it-works.md）、判定插件约定（docs/plugins.md）也有了英文版，中文版改名为 docs/how-it-works.zh-CN.md、docs/plugins.zh-CN.md。
+
 ## [0.0.41] - 2026-10-12
 
 - README 改成英文（GitHub 首页看到的就是它），中文版在 README.zh-CN.md。

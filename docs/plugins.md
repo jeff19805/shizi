@@ -1,25 +1,28 @@
-# 判定插件
+# Judgment plugins
 
-判定插件是可选的独立小程序：核心在认之前、认完、给照片分类时问它几个问题，它只回概率，所有门槛和「怎么认」都由核心定。
-不配插件，拾字照常工作，什么都不往外发。
+English | [简体中文](plugins.zh-CN.md)
 
-## 配置
+A judgment plugin is an optional, separate small program. Shizi's core asks it a few questions before recognition, after
+recognition, and when classifying photos. The plugin only returns probabilities; every threshold and every decision about how to
+recognize stays in the core. Without a plugin, Shizi works as usual and sends nothing anywhere.
 
-写在配置文件 `~/.config/shizi/config.json`（或环境变量 `SHIZI_CONFIG` 指定的文件）的 `plugins` 里，每个插件一项。
-`name` 自己起，也是钥匙串里存它密钥的账号：
+## Configuration
+
+Plugins go under `plugins` in the configuration file `~/.config/shizi/config.json` (or the file named by the `SHIZI_CONFIG`
+environment variable), one entry per plugin. You choose the `name`; it is also the keychain account that holds the plugin's API key:
 
 ```json
 {
   "plugins": [
     {
       "name": "clef",
-      "command": ["/绝对路径/ocr-plugin-systemone"],
+      "command": ["/absolute/path/to/ocr-plugin-systemone"],
       "hooks": ["route", "review"],
-      "env": { "SYSTEMONE_URL": "http://<地址>:<端口>", "SYSTEMONE_MODEL": "clef" }
+      "env": { "SYSTEMONE_URL": "http://<host>:<port>", "SYSTEMONE_MODEL": "clef" }
     },
     {
       "name": "jev",
-      "command": ["/绝对路径/ocr-plugin-systemone"],
+      "command": ["/absolute/path/to/ocr-plugin-systemone"],
       "hooks": ["review"],
       "env": { "SYSTEMONE_URL": "https://api.typesafe.ai", "SYSTEMONE_MODEL": "jev-latest" },
       "enabled": false
@@ -28,52 +31,65 @@
 }
 ```
 
-每项还可以有 `timeoutMs`（每次最多等多久，默认 route 1500、review 3000）和 `enabled: false`（先停用）。
-拾字的「设置 › 判定插件」改的就是这一段：可以加、改、停用、删；换了地址又没重填密钥，旧密钥会删掉。
+Each entry can also have `timeoutMs` (how long to wait per call; 1500 for route and 3000 for review by default) and
+`enabled: false` (to turn the plugin off for now). Settings › Judgment Plugins in Shizi edits this part of the file: you can add,
+edit, turn off, and delete plugins. If you change a plugin's URL without entering its API key again, the old key is deleted.
 
-## 约定（第 2 版）
+## Protocol (version 2)
 
-插件是独立的小程序。核心每次调用时启动它，往标准输入写一行 `{"protocol":2,"hook":"<口子>","input":{...}}`，
-它往标准输出回一行 `{"output":{...}}` 或 `{"error":"原因"}`。
-超时、出错、回的不是 JSON，一律当这一步没有插件，照常按代码规则走，并在结果的说明里写一句。
+A plugin is a separate small program. The core starts it for each call and writes one line to its standard input,
+`{"protocol":2,"hook":"<hook>","input":{...}}`; the plugin replies with one line on its standard output, `{"output":{...}}` or
+`{"error":"reason"}`. A timeout, an error, or a reply that isn't JSON is treated as if there were no plugin for that step: the core
+goes on with its own rules and adds a note to the result.
 
-插件进程只拿到几个环境变量（`HOME`、`LOGNAME`、`PATH`、`SHELL`、`TERM`、`USER`、`LANG`、`TMPDIR`、`LC_*`、`XDG_*`），
-加上 `OCR_PLUGIN_NAME`（这一项的 `name`）和这一项的 `env`；别的环境变量（里面可能有别的服务的密钥）不传。
+The plugin process receives only a few environment variables (`HOME`, `LOGNAME`, `PATH`, `SHELL`, `TERM`, `USER`, `LANG`,
+`TMPDIR`, `LC_*`, `XDG_*`), plus `OCR_PLUGIN_NAME` (the entry's `name`) and the entry's `env`. Other environment variables, which
+may hold keys for other services, are not passed on.
 
-| 口子 | 输入 | 输出 |
+| Hook | Input | Output |
 |---|---|---|
-| `describe` | `{"hooks":[这一项接的口子]}` | 随意，`ocr_status` 原样显示；其中 `warnings`（字符串数组）单独列出来 |
-| `route`（认之前） | `{"image":{"data","width","height"}}`：`data` 是 base64 的 PNG（长边不超过 1600），宽高是原图的 | `{"signals":{"vertical","table","columns","photo","curved","tiny"}}`，每项 0–1，可以只给一部分 |
-| `review`（认完） | `{"lines":[{"id","text","confidence"}],"candidates":[id]}` | `{"suspects":{"<id>": 认错的概率}}`，只需回 candidates 里的 |
-| `classify`（照片分类） | `{"questions":[{"id","criteria"}],"text":"认出的字"}` 或 `{"questions":[…],"image":{"data","type":"jpeg","width","height"}}`：一组题（编号、判断标准），加一段字（长字核心先分好段，每段最多 1600 字）或一张缩小的照片（base64 的 JPEG，长边 360，宽高是发过去的这张的） | `{"scores":{"<id>": 是的概率}}`，每道题都要回 |
+| `describe` | `{"hooks":[the hooks this entry uses]}` | Anything; `ocr_status` shows it as is, listing `warnings` (an array of strings) separately |
+| `route` (before recognition) | `{"image":{"data","width","height"}}`: `data` is a base64 PNG (at most 1600 px on the long side); width and height are the original's | `{"signals":{"vertical","table","columns","photo","curved","tiny"}}`, each from 0 to 1; any subset is fine |
+| `review` (after recognition) | `{"lines":[{"id","text","confidence"}],"candidates":[id]}` | `{"suspects":{"<id>": probability that it's misrecognized}}`, for the candidates only |
+| `classify` (photo classification) | `{"questions":[{"id","criteria"}],"text":"recognized text"}` or `{"questions":[…],"image":{"data","type":"jpeg","width","height"}}`: a set of questions (id and criteria) plus either text (the core splits long text into chunks of at most 1600 characters) or a downscaled photo (a base64 JPEG, 360 px on the long side; width and height are those of the image sent) | `{"scores":{"<id>": probability of yes}}`, for every question |
 
-核心怎么用这些概率：
+How the core uses the probabilities:
 
-- `table`、`columns`、`vertical` 到 0.5 就再认一遍文档，`photo` 到 0.5 就拉正，`tiny` 到 0.5 就切块细认，`curved` 只在说明里加一句。
-- `review` 的概率到 0.5，这一行标成可疑。
-- `classify` 到 0.8 才算是：按主题分时，到 0.8 算是这一类，可以同时是几类，都不到算「待确认」；按一句条件找时，
-  到 0.8 算符合、不到 0.2 算不符合、中间算待确认。长字每 1600 字一段，段与段重叠 100 字，每道题取各段里最高的。
+- At 0.5, `table`, `columns`, and `vertical` trigger document recognition, `photo` triggers straightening, and `tiny` triggers
+  splitting into tiles; `curved` only adds a note.
+- A `review` probability of 0.5 or more marks the line as suspicious.
+- `classify` needs 0.8 for a yes. When sorting into categories, a photo belongs to every category that reaches 0.8; if none does,
+  it is Unsure. When finding photos that match a condition, 0.8 or more is a match, under 0.2 is not, and anything in between is
+  Unsure. Long text is split into chunks of 1600 characters that overlap by 100, and each question takes the highest score among
+  the chunks.
 
-插件不是每页都会被叫到：`route` 只在认法是「自动」时走；`review` 只在有系统没把握的长行时走，干净的截图常常一行都没有；
-拾字认照片默认不用插件。
+Plugins aren't called on every page: `route` runs only when the recognition mode is Automatic, and `review` runs only when there are
+long lines the system isn't sure about, which clean screenshots often don't have. Photos are recognized without plugins by default.
 
-想知道某一页插件做了什么，在拾字里点工具栏的「识别详情」（ⓘ）：看了图说了什么、复核了几行、花了多久，没用上也写明为什么；
-逐行里插件看过的行会标出来。`detail=full` 的 JSON 里，每页的 `steps` 有 `route`、`review`（每个插件一项：名字、用时、结果或出错原因）、
-`reviewedLines`（第几行 → 插件认为认错的概率）和 `reviewCandidates`（这一页有几行要复核），没配插件时不写这几项。
+To see what the plugins did on a page, click Recognition Details (ⓘ) in Shizi's toolbar: it shows what the image check reported,
+how many lines were reviewed, and how long it took, or why a plugin wasn't used. Lines a plugin looked at are marked in Line by Line.
+In the `detail=full` JSON, each page's `steps` include `route` and `review` (one item per plugin: name, time, and result or error),
+`reviewedLines` (line number → probability the plugin thinks it's misrecognized), and `reviewCandidates` (how many lines on the page
+needed review); they are left out when no plugin is configured.
 
-## System One 判定插件
+## The System One judgment plugin
 
-`ocr-plugin-systemone` 把看图、复核、分类这几件事交给一个 System One 判定服务。Clef、TypeSafe Jev、灵犀的判定网关说的都是这个约定
-（`POST /v1/systemone`：`{model, state, questions}` → `answers[id].noul`），所以只有这一个插件，接哪家、叫什么都写在配置里。
+`ocr-plugin-systemone` hands image checks, reviews, and classification to a System One judgment service. Clef, TypeSafe Jev, and
+Lingxi's judgment gateway all speak this protocol (`POST /v1/systemone`: `{model, state, questions}` → `answers[id].noul`), so this
+is the only plugin you need; which service it talks to and what it's called are set in the configuration.
 
-- `SYSTEMONE_URL`：必填，服务地址（末尾带不带 `/v1/systemone` 都行，不能带用户名密码）。
-- `SYSTEMONE_MODEL`：必填，模型名，比如 `clef`、`jev-latest`、`lingxi-decision`。
-- `SYSTEMONE_PROXY`：要经代理才连得上时填，默认直连。
-- 密钥存钥匙串，账号就是这一项的 `name`：在拾字的设置里填，或者 `security add-generic-password -s shizi -a <name> -w`
-  （`-w` 放在最后，回车以后再输密钥，密钥不进命令行记录）。别写进配置文件。改名前存在 `-s mac-ocr-mcp` 下面的也认。
-- `shizi-mcp status` 和拾字设置里的「测试连接」会测一遍：先问一道答案明摆着的题，答对才算通，显示耗时和服务报的模型版本；再看收不收图。
-  `route` 和看画面分类要发图，不收图的服务（比如灵犀的判定网关）只能接 `review` 和看字分类；`route` 接错了会提醒。
-  出错时只说固定的几种话，不带服务的原话。
+- `SYSTEMONE_URL`: required. The service URL, with or without `/v1/systemone` at the end, and without a user name or password.
+- `SYSTEMONE_MODEL`: required. The model name, such as `clef`, `jev-latest`, or `lingxi-decision`.
+- `SYSTEMONE_PROXY`: set it when the service can only be reached through a proxy; connections are direct by default.
+- The API key is stored in the keychain, with the entry's `name` as the account. Enter it in Shizi's Settings, or run
+  `security add-generic-password -s shizi -a <name> -w` (with `-w` last, you type the key after pressing Return, so it doesn't end
+  up in your command history). Never put it in the configuration file. Keys stored under `-s mac-ocr-mcp` before the rename still work.
+- `shizi-mcp status` and Test Connection in Shizi's Settings check the service: they ask a question with an obvious answer and
+  count the service as working only if it answers correctly, show the time taken and the model version the service reports, and
+  then check whether it accepts images. `route` and classifying by image send images, so a service that doesn't accept images
+  (such as Lingxi's judgment gateway) can only be used for `review` and classifying by text; you are warned if `route` is set up
+  on one. Errors are reported as one of a few fixed messages, never in the service's own words.
 
-它用系统自带的 `/usr/bin/curl` 发请求：macOS 的「本地网络」隐私保护会拦下没被允许过的新程序访问局域网里的设备
-（连得上服务、却收不到回复），系统自带的 curl 不受影响。密钥经环境变量交给 curl，不出现在命令行参数里。
+The plugin sends requests with the system's own `/usr/bin/curl`. macOS's Local Network privacy protection stops newly built
+programs that haven't been allowed from reaching devices on the local network (they can connect to the service but never receive a
+reply), and the system curl isn't affected. The API key is passed to curl through an environment variable, never on the command line.

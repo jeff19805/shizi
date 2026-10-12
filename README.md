@@ -142,7 +142,7 @@ this file, and the MCP server checks it before each call, so changes apply witho
 - **Judgment plugins**: one entry per plugin under `plugins`. API keys are kept in the keychain, never in the file.
   A plugin sends what it needs to judge to the service you configure: downscaled images for image checks and for classifying
   by image, the suspicious lines for reviews, and the recognized text for classifying by text. Without plugins, nothing is sent
-  anywhere. For setup and the plugin protocol, see [docs/plugins.md](docs/plugins.md) (Chinese).
+  anywhere. For setup and the plugin protocol, see [docs/plugins.md](docs/plugins.md).
 
 ## Limitations
 
@@ -154,7 +154,7 @@ Signatures can't be read, and handwriting isn't specifically tuned.
 ## How it works
 
 How automatic mode chooses a strategy, when a PDF's own text is used, and when Chinese First falls back are explained in
-[docs/how-it-works.md](docs/how-it-works.md) (Chinese).
+[docs/how-it-works.md](docs/how-it-works.md).
 
 ## Development
 

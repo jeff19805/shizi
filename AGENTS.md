@@ -1,6 +1,6 @@
 # 开发规矩
 
-给参与这个项目的人和 AI 看。用法见 README.zh-CN.md（英文版是 README.md），自动模式怎么认见 docs/how-it-works.md，插件约定见 docs/plugins.md。
+给参与这个项目的人和 AI 看。用法见 README.zh-CN.md（英文版是 README.md），自动模式怎么认见 docs/how-it-works.zh-CN.md，插件约定见 docs/plugins.zh-CN.md（英文版去掉 .zh-CN）。
 
 ## 项目是什么
 
@@ -20,7 +20,7 @@
 | `scripts/` | `test.sh` 跑测试、`setup-hooks.sh` 装提交钩子、`test-hooks.sh` 测提交钩子、`build-app.sh` 编拾字 App（默认本机自签；`--sign` Developer ID 签名；`--release` 再公证、打包，会把 App 传给苹果，跑之前先问用户；签名身份写在本机的 `app/signing.env`，不进仓库；`app/` 里是 Info.plist 和画图标的脚本） |
 | `.githooks/pre-commit` | 提交钩子：检查 CHANGELOG、版本号 +1 |
 | `docs/design-spec.md` | 拾字的界面规范：改界面先看它 |
-| `docs/how-it-works.md`、`docs/plugins.md` | 自动模式怎么认、判定插件的约定：改了识别流程、插件约定要跟着改 |
+| `docs/how-it-works.md`、`docs/plugins.md` | 自动模式怎么认、判定插件的约定（英文；中文版是同名的 .zh-CN.md）：改了识别流程、插件约定要跟着改 |
 | `docs/plans/` | 方案：一件事一份，文件名「日期-主题.md」（如 `2026-10-09-app.md`），做完一批在里面记一笔。别往根目录放。只在本机、不进仓库（在 .gitignore 里），评审记录 `docs/reviews/` 也一样：里面有实测数字和真文件的细节 |
 
 ## 写代码
@@ -44,7 +44,8 @@
 - 合成测试图比真文件干净，改识别流程最好再拿一份真扫描件或真照片看一眼（真扫描件上查出过合成图看不出的毛病：认文档在扫描件上字差，逐行识别遇到表格顺序乱）。
 - 每个门槛、每条规则都写清「为什么」，照现有注释的写法讲理由。实测数字、测试文件的代号和页码不写进注释、文档（仓库是公开的），
   记在本机的方案里（`docs/plans/`）。注释、文档、给人看的输出都用中文、大白话。
-- README 有两份：英文的 README.md 是 GitHub 首页，中文的 README.zh-CN.md。改了一份要同步改另一份，内容一一对应。
+- README 和 docs/ 里的原理、插件约定都有两份：英文的用原名（README.md 是 GitHub 首页），中文的是同名加 .zh-CN.md。
+  改了一份要同步改另一份，内容一一对应。
 - 坐标一律 0–1、左上角为原点；系统接口是左下角为原点，进出时各翻一次。
 - 插件只给概率，所有门槛和「怎么认」都由核心定；核心不认任何插件的名字，不写默认地址；密钥不进任何文件。
 - 已知的坑：
