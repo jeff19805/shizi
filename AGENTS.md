@@ -1,6 +1,6 @@
 # 开发规矩
 
-给参与这个项目的人和 AI 看。用法见 README.md，自动模式怎么认见 docs/how-it-works.md，插件约定见 docs/plugins.md。
+给参与这个项目的人和 AI 看。用法见 README.zh-CN.md（英文版是 README.md），自动模式怎么认见 docs/how-it-works.md，插件约定见 docs/plugins.md。
 
 ## 项目是什么
 
@@ -29,7 +29,7 @@
 - 发布版编译不许有警告：`swift build -c release`。
 - 改了代码要跑 `./scripts/test.sh`，全过才提交；加功能、修坑要配测试。
 - 改了拾字的界面要出图看一眼：`swift run shizi-snapshots <输出文件夹> <测试图文件夹>`（测试图文件夹里放研究目录的
-  receipt.png、table.png，和 short.pdf、long.pdf 两个多页 PDF：README 和一份 30 来页的中文文档（比如本机 docs/plans 里的方案）用 Chrome 打印成 A4，几页和 30 多页），
+  receipt.png、table.png，和 short.pdf、long.pdf 两个多页 PDF：README.zh-CN.md 和一份 30 来页的中文文档（比如本机 docs/plans 里的方案）用 Chrome 打印成 A4，几页和 30 多页），
   浅色、深色都看，对着 `docs/design-spec.md` 查。界面有中文、英文两种，后面加 `-AppleLanguages '(en)'` 再出一份英文的，看有没有字被截断。
 - 拾字界面上的中文直接写在代码里，英文写进 `scripts/app/en.lproj/Localizable.strings`（键是中文原文，占位符 `Int` 用 `%lld`、`String` 用 `%@`）。
   SwiftUI 接口直接收字面量的（`Text("…")`、`Button("…")`、`.help("…")`……）自己会按语言取字；先存进 `String` 的要写成 `String(localized: "…")`。
@@ -44,6 +44,7 @@
 - 合成测试图比真文件干净，改识别流程最好再拿一份真扫描件或真照片看一眼（真扫描件上查出过合成图看不出的毛病：认文档在扫描件上字差，逐行识别遇到表格顺序乱）。
 - 每个门槛、每条规则都写清「为什么」，照现有注释的写法讲理由。实测数字、测试文件的代号和页码不写进注释、文档（仓库是公开的），
   记在本机的方案里（`docs/plans/`）。注释、文档、给人看的输出都用中文、大白话。
+- README 有两份：英文的 README.md 是 GitHub 首页，中文的 README.zh-CN.md。改了一份要同步改另一份，内容一一对应。
 - 坐标一律 0–1、左上角为原点；系统接口是左下角为原点，进出时各翻一次。
 - 插件只给概率，所有门槛和「怎么认」都由核心定；核心不认任何插件的名字，不写默认地址；密钥不进任何文件。
 - 已知的坑：

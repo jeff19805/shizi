@@ -1,142 +1,176 @@
-# 拾字（shizi）
+# Shizi (拾字)
 
-拾字是 Mac 上的本机文字识别：把图片、截图、扫描件和 PDF 里的字认出来，认过的照片按字就能搜到。
-用的是 macOS 自带的文字识别，全在本机、不联网、不收费。
-有带界面的 App，也有给 AI 助手用的 MCP 服务 `shizi-mcp`：Claude Code 这类支持 MCP 的助手接上它，就能读图片和 PDF 里的字。
+English | [简体中文](README.zh-CN.md)
 
-0.0.35 及以前叫 mac-ocr-mcp，升级要改什么见 [CHANGELOG.md](CHANGELOG.md) 的 0.0.36。
+Shizi is on-device text recognition for the Mac. It reads the text in images, screenshots, scans, and PDFs, and makes the photos
+it has recognized searchable by their text. It uses the text recognition built into macOS: everything stays on your Mac, with no
+internet connection and no fees. It comes as a Mac app and as an MCP server, `shizi-mcp`, so AI assistants that support MCP,
+such as Claude Code, can read the text in images and PDFs.
 
-## 能做什么
+The name means "picking up characters" in Chinese. Versions 0.0.35 and earlier were called mac-ocr-mcp; version 0.0.36 in
+[CHANGELOG.md](CHANGELOG.md) (Chinese) lists what to change when you upgrade.
 
-- **各种图**：照片、截图、扫描件都能认。任意角度（倒着的也行），拍歪的纸先拉正，大图里的小字切块细认，二维码、条码一起找。
-- **表格和版面**：表格出成 Markdown，多栏按阅读顺序排，竖排从右往左；扫描的表格、表单按纸上画的线一格一格读。表格、多栏、竖排要 macOS 26。
-- **PDF**：Word、浏览器导出的 PDF 直接用它自带的字，一字不差，也快得多，里面的插图另外认；扫描件一页页认图。
-- **语言**：30 种，默认自动判断。汉字夹在字母、数字、算式里的，选「中文优先」认得准。
-- **照片**：给照片图库里的照片认字，以后按字就能搜到；接上判定服务还能按内容给照片分类，分好存成相簿。
-- **给 AI 助手用**：MCP 服务能认图片和 PDF、把整份文件认完写成文本、在认过的照片里按字找。
-- **判定插件（可选）**：接一个判定服务，让它认之前先看图定怎么认、认完复核可疑的行、给照片分类。不装也照常工作。
+## Features
 
-## 安装
+- **All kinds of images**: photos, screenshots, and scans, at any angle, even upside down. Tilted pages are straightened first,
+  small text in large images is split into tiles and recognized in detail, and QR codes and barcodes are detected too.
+- **Tables and layout**: tables come out as Markdown, multi-column pages in reading order, and vertical text from right to left.
+  Scanned tables and forms are read cell by cell along the lines printed on the paper. Tables, columns, and vertical text need macOS 26.
+- **PDFs**: PDFs exported from Word or a browser use their own text, which is exact and much faster; images inside them are
+  recognized separately. Scanned PDFs are recognized page by page.
+- **Languages**: 30, detected automatically. For Chinese mixed with Latin letters, digits, or formulas, the Chinese First
+  option gets it right.
+- **Photos**: recognize the text in your Photos library and find photos by their text later. With a judgment service connected,
+  Shizi can also classify photos by content and save each category as an album.
+- **For AI assistants**: the MCP server recognizes images and PDFs, writes whole documents out as text files, and searches
+  recognized photos by text.
+- **Judgment plugins (optional)**: connect a judgment service to check an image before recognition and decide how to read it,
+  to review lines that may be misrecognized, and to classify photos. Everything works without one.
 
-运行要 macOS 14 或更新（表格、多栏、竖排要 macOS 26）。现在只能从源码编，要 Xcode 26 或同版本的命令行工具。
+## Install
 
-编 App：
+Shizi runs on macOS 14 or later; tables, columns, and vertical text need macOS 26. For now it is built from source, which needs
+Xcode 26 or the matching Command Line Tools.
+
+Build the app:
 
 ```bash
-./scripts/build-app.sh   # 编出 .build/app/Shizi.app，本机自签，拖进「应用程序」就能用
+./scripts/build-app.sh   # builds .build/app/Shizi.app, ad-hoc signed; drag it to Applications
 ```
 
-App 里带着 MCP 服务和判定插件。本机自签的 App 每重编一次，系统都当成新程序，照片权限要重新给。
+The app includes the MCP server and the judgment plugin. An ad-hoc signed app counts as a new app after every rebuild, so you
+need to grant Photos access again each time.
 
-只要 MCP 服务和命令行：
+Build just the MCP server and the command line:
 
 ```bash
-swift build -c release   # 得到 .build/release/shizi-mcp，判定插件是 .build/release/ocr-plugin-systemone
+swift build -c release   # builds .build/release/shizi-mcp; the judgment plugin is .build/release/ocr-plugin-systemone
 ```
 
-## 用法
+## Usage
 
 ### App
 
-图片、PDF 拖进来、打开，或者 ⌘V 粘贴截图，就开始认。
+Drag in or open an image or PDF, or paste a screenshot with ⌘V, and recognition starts.
 
-- 左边是原图，叠着每一行的框；右边是认出的字。「整页」是一整段，表格画成真的表；「逐行」一行一项，可能认错的标出来。⌘1、⌘2 切换。
-- 在图上拖一个框，只认那一块。能复制全文，能导出 Markdown、纯文字、JSON（带每行的位置）。
-- 多页的 PDF 一页页认，随时能停；原图上下接成一长条，滚到哪页，页码和右边的字就跟到哪页。
-- **照片**：左栏「照片」里给权限、选相簿，点「识别」认还没认过的照片。搜索框按字找认过的照片，选几张能加进相簿。
-  原图只在 iCloud 上的照片先下载再认，设置里能关。
-- **分类**：相簿页头的「分类」，按类别分照片，或者按一句条件找；可以看认出的字，也可以看画面。要先在设置里给判定插件打开「分类照片」。
-- **界面语言**：中文、英文。默认跟着系统：系统语言是中文就用中文，别的都用英文；设置里也能单独指定，重开拾字后生效。
-  识别结果里的说明文字（可能认错的行、版面位置的标记）现在还是中文。
-- **设置**（⌘,）：识别的默认做法、识别语言、界面语言、判定插件；「接入」里复制给 Claude Code 的命令、给别的助手的配置，
-  也能一键接入灵犀（作者自己用的 AI 助手）。
+- The original is on the left, with a box over each line; the recognized text is on the right. **Page** shows it as running text,
+  with tables drawn as real tables; **Line by Line** lists one line per row and marks the ones that may be misrecognized.
+  Switch between them with ⌘1 and ⌘2.
+- Drag a box on the image to recognize just that area. Copy all the text, or export it as Markdown, plain text, or JSON
+  (with each line's position).
+- Multi-page PDFs are recognized page by page, and you can stop at any time. The pages form one long scroll, and the page list
+  and the text follow the page you are on.
+- **Photos**: under Photos in the sidebar, grant access, pick an album, and click Recognize to recognize the photos that haven't
+  been recognized yet. Find recognized photos by their text in the search field, and add selected photos to an album.
+  Photos whose originals are only in iCloud are downloaded first; you can turn that off in Settings.
+- **Classify**: Classify in the album header sorts photos into categories, or finds the ones that match a condition, by their
+  recognized text or by the image itself. First turn on "Classify photos" for a judgment plugin in Settings.
+- **Language**: English and Chinese. Shizi follows your system language: Chinese if your system language is Chinese, English
+  otherwise. You can also pick one in Settings › Recognition › Interface; it takes effect after Shizi relaunches.
+  Notes inside recognition results (such as lines that may be misrecognized and layout position markers) are still in Chinese.
+- **Settings** (⌘,): recognition defaults, recognition language, interface language, and judgment plugins. Connect gives you
+  the command for Claude Code and the configuration for other assistants, and sets up Lingxi, the author's own assistant,
+  in one click.
 
-### 接进 AI 助手（MCP）
+### Connect an AI assistant (MCP)
 
-不带参数运行 `shizi-mcp`，就是 MCP 服务（走标准输入输出）。Claude Code：
+Run `shizi-mcp` with no arguments to start the MCP server over standard input and output. For Claude Code:
 
 ```bash
-claude mcp add shizi -- /绝对路径/shizi-mcp
+claude mcp add shizi -- /absolute/path/to/shizi-mcp
 ```
 
-别的助手照这样配：
+For other assistants:
 
 ```json
-{ "mcpServers": { "shizi": { "command": "/绝对路径/shizi-mcp" } } }
+{ "mcpServers": { "shizi": { "command": "/absolute/path/to/shizi-mcp" } } }
 ```
 
-装了 App 的，路径在设置的「接入」里能直接复制。
+If you use the app, copy the path from Settings › Connect.
 
-工具：
+Tools:
 
-- `ocr_image`：认图片或 PDF，回认出的字：正文按阅读顺序，表格是 Markdown，末尾列出二维码和可能认错的行。
-- `ocr_to_file`：整份认完写成 Markdown 文件，回复只给路径和摘要；页数多、要全文时用。参数跟 `ocr_image` 一样，另有 `outputPath`；
-  不给就写到 `~/Library/Caches/shizi/results/`（7 天后自动清掉）。一次最多 100 页。
-- `photos_search`：在拾字认过的照片里按字找，参数 `query`（几个词用空格隔开）、`limit`。只读拾字存的字，不碰照片图库。
-- `ocr_status`：这台 Mac 能认什么、配了哪些插件、连不连得上。
+- `ocr_image`: recognizes an image or PDF and returns the text: the body in reading order, tables as Markdown, followed by any
+  QR codes and the lines that may be misrecognized.
+- `ocr_to_file`: recognizes a whole document into a Markdown file and replies with just the path and a summary. Use it for long
+  documents when you need the full text. It takes the same parameters as `ocr_image`, plus `outputPath`; without it, files go to
+  `~/Library/Caches/shizi/results/` and are cleaned up after 7 days. Up to 100 pages per call.
+- `photos_search`: finds photos Shizi has recognized by their text. Parameters: `query` (words separated by spaces) and `limit`.
+  It only reads the text Shizi stored and never touches your Photos library.
+- `ocr_status`: shows what this Mac can recognize, which plugins are configured, and whether they can be reached.
 
-`ocr_image`、`ocr_to_file` 的参数：
+Tool descriptions and the notes in results are in Chinese for now; AI assistants read them fine.
 
-| 参数 | 说明 |
+Parameters of `ocr_image` and `ocr_to_file`:
+
+| Parameter | Description |
 |---|---|
-| `path` | 必填，图片或 PDF 的路径（可以用 ~） |
-| `pages` | PDF 页码，如 `"1-3,5"`；默认从头起最多 20 页 |
-| `mode` | `auto`（默认）/ `lines` 逐行 / `document` 认文档 |
-| `languages` | 不给就照设置里的识别语言；`["chinese-first"]` 中文优先，`["auto"]` 自动判断，`["zh-Hans", "en-US"]` 这样是指定语言（只用第一个语言的模型，中日韩的排到最前） |
-| `region` | 只认一块：`[左, 上, 宽, 高]`，0–1，左上为原点；结果的坐标仍相对整张图 |
-| `rectify` | 拉正拍歪的纸：`auto` / `on` / `off` |
-| `tiles` | 大图小字切块细认：`auto` / `on` / `off` |
-| `barcodes` | 找不找二维码、条码，默认找 |
-| `detail` | `text`（默认）只给字；`full` 另附一块 JSON：每行的位置、可信度、表格格子等 |
-| `plugins` | 这次调不调判定插件，默认调 |
-| `textLayer` | PDF 里有字时直接用，默认 `true`；`false` 全部认图 |
+| `path` | Required. Path to the image or PDF (`~` works) |
+| `pages` | PDF pages, such as `"1-3,5"`; by default up to 20 pages from the start |
+| `mode` | `auto` (default) / `lines` (line by line) / `document` |
+| `languages` | Omit to use the recognition language from Settings; `["chinese-first"]` for Chinese First, `["auto"]` for automatic; a list such as `["zh-Hans", "en-US"]` sets the languages (only the first language's model is used, so Chinese, Japanese, and Korean are moved to the front) |
+| `region` | Recognize one area only: `[left, top, width, height]` from 0 to 1, with the origin at the top left; result coordinates stay relative to the whole image |
+| `rectify` | Straighten tilted pages: `auto` / `on` / `off` |
+| `tiles` | Split large images into tiles to read small text: `auto` / `on` / `off` |
+| `barcodes` | Detect QR codes and barcodes; on by default |
+| `detail` | `text` (default) returns just the text; `full` adds a JSON block with each line's position, confidence, table cells, and more |
+| `plugins` | Whether to call judgment plugins this time; on by default |
+| `textLayer` | Use a PDF's own text when it has one; `true` by default, `false` recognizes every page as an image |
 
-一次回复最多约 45 KB。多页 PDF 放不下时在整页处停，末尾写明接着用什么 `pages` 再调。
-`detail: "full"` 的 JSON 里，坐标都是 0–1、左上为原点。
+A reply holds about 45 KB at most. When a multi-page PDF doesn't fit, the reply stops at a page boundary and says which `pages`
+to request next. Coordinates in the `detail: "full"` JSON run from 0 to 1, with the origin at the top left.
 
-### 命令行
-
-```bash
-shizi-mcp ocr 图片.png                   # 认出的字
-shizi-mcp ocr 文件.pdf --pages 2 --json  # 完整的结构化结果
-shizi-mcp status                         # 能认什么、插件通不通
-```
-
-选项跟工具参数一一对应，`shizi-mcp --help` 看全部。
-
-## 设置
-
-配置文件是 `~/.config/shizi/config.json`（也可以用环境变量 `SHIZI_CONFIG` 指定别的）。拾字的设置页改的就是它；
-MCP 服务每次调用前看一眼它改没改过，改了不用重启。
-
-- **识别语言**：`"recognition": {"languages": "chinese-first"}` 是中文优先，不写是自动判断。自动判断是系统一行一行挑语言，
-  汉字夹在字母、数字里的行容易认成乱码；中文优先先按中文认，整页是西文、或者有中文认不了的字（韩文、日文）时改回自动判断。
-- **判定插件**：写在 `plugins` 里，每个插件一项；密钥放钥匙串，不写进配置文件。插件会把要判断的东西发给你配的服务：
-  看图、按画面分类时发缩小的图，复核时发可疑的那几行字，按字分类时发认出的字。不配插件就什么都不发。
-  怎么配、插件约定，见 [docs/plugins.md](docs/plugins.md)。
-
-## 认不了或认不准的
-
-表情符号、公式里的上下标、太小的字（字高不到约 8 像素）、印章那种沿弧线排的字、I 和 l 这类字体本身就分不清的、
-合并的表格格子（会拆成空格）。表格线只认黑线，红底、浅灰线的表还是一行行出。签名认不出，手写的字没专门调过。
-
-## 原理
-
-自动模式怎么决定认法、PDF 什么时候用它自带的字、中文优先什么时候改回自动判断，见 [docs/how-it-works.md](docs/how-it-works.md)。
-
-## 开发
-
-开发规矩见 [AGENTS.md](AGENTS.md)，改动记录见 [CHANGELOG.md](CHANGELOG.md)，界面规范见 [docs/design-spec.md](docs/design-spec.md)。
+### Command line
 
 ```bash
-./scripts/setup-hooks.sh   # 克隆后跑一次：启用提交钩子（检查 CHANGELOG、版本号 +1）
-./scripts/test.sh          # 单元测试
-./scripts/test-hooks.sh    # 测提交钩子
+shizi-mcp ocr image.png                      # the recognized text
+shizi-mcp ocr document.pdf --pages 2 --json  # the full structured result
+shizi-mcp status                             # what can be recognized, and whether plugins work
 ```
 
-`./scripts/build-app.sh --sign`、`--release` 用你自己的 Developer ID 签名、公证，怎么设见脚本开头。
-验收脚本 `bench/bench.mjs` 要用作者本机的一组测试图，测试图不在这个仓库里。
+The options match the tool parameters; `shizi-mcp --help` lists them all.
 
-## 许可证
+## Settings
 
-[MIT](LICENSE)。
+The configuration file is `~/.config/shizi/config.json` (set `SHIZI_CONFIG` to use another file). Shizi's Settings window edits
+this file, and the MCP server checks it before each call, so changes apply without a restart.
+
+- **Recognition language**: `"recognition": {"languages": "chinese-first"}` means Chinese First; leave it out for automatic.
+  In automatic mode the system picks a language line by line, so Chinese in lines full of letters and digits often comes out
+  garbled. Chinese First recognizes text as Chinese first, and falls back to automatic when a page is in a Western language or
+  has text that Chinese can't read (Korean, Japanese).
+- **Judgment plugins**: one entry per plugin under `plugins`. API keys are kept in the keychain, never in the file.
+  A plugin sends what it needs to judge to the service you configure: downscaled images for image checks and for classifying
+  by image, the suspicious lines for reviews, and the recognized text for classifying by text. Without plugins, nothing is sent
+  anywhere. For setup and the plugin protocol, see [docs/plugins.md](docs/plugins.md) (Chinese).
+
+## Limitations
+
+Shizi can't read, or reads poorly: emoji, superscripts and subscripts in formulas, very small text (under about 8 pixels tall),
+text curved along a seal, characters a typeface doesn't distinguish (such as I and l), and merged table cells (they are split into
+blanks). Only black table lines are detected, so tables on red backgrounds or with light gray lines come out line by line.
+Signatures can't be read, and handwriting isn't specifically tuned.
+
+## How it works
+
+How automatic mode chooses a strategy, when a PDF's own text is used, and when Chinese First falls back are explained in
+[docs/how-it-works.md](docs/how-it-works.md) (Chinese).
+
+## Development
+
+The development rules are in [AGENTS.md](AGENTS.md), the change log is [CHANGELOG.md](CHANGELOG.md), and the UI guidelines are
+in [docs/design-spec.md](docs/design-spec.md), all in Chinese.
+
+```bash
+./scripts/setup-hooks.sh   # run once after cloning: enables the commit hook (checks CHANGELOG, bumps the version)
+./scripts/test.sh          # unit tests
+./scripts/test-hooks.sh    # tests for the commit hook
+```
+
+`./scripts/build-app.sh --sign` and `--release` sign and notarize with your own Developer ID; the top of the script explains
+how to set it up. The benchmark script `bench/bench.mjs` uses a set of test images on the author's machine that isn't in this
+repository.
+
+## License
+
+[MIT](LICENSE)
