@@ -29,10 +29,17 @@ public struct ClassifyRules: Equatable, Sendable {
 	public var rules: [Rule]
 	public var input: Input
 
-	/// 分完的结果里这几个名字有专门的意思，类别不能叫这些。
+	/// 分完的结果里这几个名字有专门的意思，类别不能叫这些。它们算在指纹里、存在照片库里，一直是中文，给人看时才换成界面的语言。
 	public static let undecided = "待确认"
 	public static let matched = "符合条件"
 	public static let unmatched = "不符合条件"
+
+	/// 类别不能叫的名字：上面三个，加上它们在界面上显示的样子。英文界面上「待确认」显示成 Unsure，
+	/// 类别也叫 Unsure 的话，筛选条上两个 Unsure 分不清。
+	static var reserved: Set<String> {
+		let fixed = [undecided, matched, unmatched]
+		return Set(fixed + fixed.map { Texts.text(String.LocalizationValue($0)) })
+	}
 
 	/// 到这个分算「是」：再低误报多。
 	public static let hit = 0.8
@@ -44,15 +51,18 @@ public struct ClassifyRules: Equatable, Sendable {
 	/// 改了分段、门槛以外影响结果的东西（题目说法等）时加一，旧的分数就不算数了。
 	public static let revision = 1
 
-	/// 按字分的默认类别（6 类）。一行一个，「名称：判断标准」。
-	public static let defaultTopics = """
-		技术资料：软件开发、计算机、网络、人工智能、技术教程或故障排查
-		工作事务：工作安排、会议通知、项目协作、业务沟通或工作流程
-		订单票据：商品订单、付款、交易、发票、收据或报销
-		生活攻略：旅行、餐饮、购物、家居等生活经验与攻略
-		学习知识：课程、读书笔记、知识讲解或学习资料
-		合同约定：合同条款、双方义务、付款期限或协议约定
-		"""
+	/// 按字分的默认类别（6 类）。一行一个，「名称：判断标准」。跟界面语言走，英文在对照表里。
+	/// 中文的一个字都别改：用默认类别分好的照片，分数是按这几行字算的指纹存的，改了就得全部重分（测试里钉着它的指纹）。
+	public static var defaultTopics: String {
+		Texts.text("""
+			技术资料：软件开发、计算机、网络、人工智能、技术教程或故障排查
+			工作事务：工作安排、会议通知、项目协作、业务沟通或工作流程
+			订单票据：商品订单、付款、交易、发票、收据或报销
+			生活攻略：旅行、餐饮、购物、家居等生活经验与攻略
+			学习知识：课程、读书笔记、知识讲解或学习资料
+			合同约定：合同条款、双方义务、付款期限或协议约定
+			""")
+	}
 
 	/// 类别写得不对：说哪儿不对，给人看。
 	public struct Problem: Error, CustomStringConvertible, Equatable {
@@ -60,17 +70,19 @@ public struct ClassifyRules: Equatable, Sendable {
 		init(_ message: String) { description = message }
 	}
 
-	/// 按画面分的默认类别（8 类）。一行一个，「名称：判断标准」。
-	public static let defaultImageTopics = """
-		人物：照片中有作为重要内容的真人或人群；不包括文档、屏幕或海报中很小的人像。
-		动物：照片以宠物、野生动物、鸟类或其他真实动物为重要内容。
-		美食：食物、饮品、菜肴或烹饪是图片的重要内容。
-		自然风景：山川、海滩、天空、树林、花草等自然景观是图片的重要内容。
-		建筑街景：建筑、城市街景、室内空间或历史古迹是图片的重要内容。
-		文档票据：文档、书页、笔记、证件、收据、票据或以阅读文字为目的的资料图片。
-		屏幕截图：手机或电脑屏幕截图、应用界面、聊天界面或软件页面；不包括普通相机拍摄的风景。
-		物品：以商品、工具、设备、车辆、服饰或其他具体物件为主体的图片。
-		"""
+	/// 按画面分的默认类别（8 类）。一行一个，「名称：判断标准」。跟按字分的一样：跟界面语言走，中文的一个字都别改。
+	public static var defaultImageTopics: String {
+		Texts.text("""
+			人物：照片中有作为重要内容的真人或人群；不包括文档、屏幕或海报中很小的人像。
+			动物：照片以宠物、野生动物、鸟类或其他真实动物为重要内容。
+			美食：食物、饮品、菜肴或烹饪是图片的重要内容。
+			自然风景：山川、海滩、天空、树林、花草等自然景观是图片的重要内容。
+			建筑街景：建筑、城市街景、室内空间或历史古迹是图片的重要内容。
+			文档票据：文档、书页、笔记、证件、收据、票据或以阅读文字为目的的资料图片。
+			屏幕截图：手机或电脑屏幕截图、应用界面、聊天界面或软件页面；不包括普通相机拍摄的风景。
+			物品：以商品、工具、设备、车辆、服饰或其他具体物件为主体的图片。
+			""")
+	}
 
 	public init(mode: Mode, rules: [Rule], input: Input = .text) {
 		self.mode = mode
@@ -104,7 +116,7 @@ public struct ClassifyRules: Equatable, Sendable {
 			let criteria = line[line.index(after: colon)...].trimmingCharacters(in: .whitespaces)
 			guard !title.isEmpty, !criteria.isEmpty else { throw Problem(Texts.text("第 \(i + 1) 行的名称或判断标准是空的")) }
 			guard title.count <= 20, criteria.count <= 200 else { throw Problem(Texts.text("第 \(i + 1) 行太长：名称最多 20 字，判断标准最多 200 字")) }
-			guard ![undecided, matched, unmatched].contains(title) else { throw Problem(Texts.text("「\(title)」是留着的名字，换一个")) }
+			guard !reserved.contains(title) else { throw Problem(Texts.text("「\(title)」是留着的名字，换一个")) }
 			guard names.insert(title).inserted else { throw Problem(Texts.text("「\(title)」写了两次")) }
 			rules.append(Rule(id: "t\(i)", title: title, criteria: criteria))
 		}

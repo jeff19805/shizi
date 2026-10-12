@@ -6,7 +6,7 @@ import SwiftUI
 /// 照片分类的几张截图：先把样例相簿真的认一遍，再用一个示例分类插件真的分一遍，然后拍分完的网格、只看一类、「分类」那一小窗；
 /// 再按画面分一遍，拍网格和看画面时的小窗。不碰真的照片图库，也不连判定服务。
 /// 示例插件不会看图，只装个样子：按字分时，判断标准里用「、」隔开的词，字里有就算是；按画面分时按图的长宽比，
-/// 细长的算屏幕截图、略高的算文档票据、横的算自然风景（样例里正好是这三种图）。
+/// 细长的算屏幕截图、略高的算文档票据、横的算自然风景（样例里正好是这三种图），默认类别是中文、英文的都认。
 @MainActor
 func classifySnapshots() {
 	let script = out.appendingPathComponent("示例分类插件.py")
@@ -16,9 +16,9 @@ func classifySnapshots() {
 		inp = json.load(sys.stdin)["input"]
 		if "image" in inp:
 		    r = inp["image"]["height"] / inp["image"]["width"]
-		    kind = "屏幕截图" if r > 1.8 else "收据" if r > 1.1 else "自然景观"
+		    kind = ("屏幕截图", "screenshot") if r > 1.8 else ("收据", "receipt") if r > 1.1 else ("自然景观", "mountains")
 		    def score(criteria):
-		        return 0.9 if kind in criteria else 0.1
+		        return 0.9 if any(k in criteria for k in kind) else 0.1
 		else:
 		    def score(criteria):
 		        return 0.9 if any(w and w in inp["text"] for w in criteria.split("、")) else 0.1

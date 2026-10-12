@@ -15,6 +15,7 @@ public struct ClassifyProgress: Equatable {
 
 /// 分类的设置：看字还是看画面、上次用的分法和写的类别、条件。下次打开还是它，网格上的筛选也按它。
 /// 按字、按画面的类别和条件各记各的（默认类别也不一样）。
+/// 没存过类别时用界面语言的默认类别；存下的不跟着界面语言换：换成另一种语言就是另一套类别，分好的得重分。
 enum ClassifySettings {
 	static let input = "拾字.分类.看什么"
 	static let mode = "拾字.分类.方式"

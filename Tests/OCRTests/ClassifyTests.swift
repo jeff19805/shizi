@@ -180,6 +180,32 @@ func 按字分在真的判定服务上() throws {
 	#expect(image.fingerprint != old, "同样的类别按画面分，分数另记")
 }
 
+@Test func 默认类别跟着界面语言() throws {
+	// 中文的默认类别一个字都不能改：用它分好的照片按这两个指纹找分数（是改成跟界面语言走以前，照原来的字算的）。
+	let text = try ClassifyRules.parse(mode: .topics, source: ClassifyRules.defaultTopics)
+	let image = try ClassifyRules.parse(mode: .topics, source: ClassifyRules.defaultImageTopics, input: .image)
+	#expect(text.fingerprint == "1b186003f1998ee0cc2fa5d3e7332c76389433ef050851a6f162d2c51bc13b7e")
+	#expect(image.fingerprint == "1c59c2a694e59aeac43acf6447e6b33f9da6413542e6fa9ecc216fe2580966b0")
+	// 中文界面上类别可以叫 Unsure：「待确认」显示的是中文，分得清。
+	#expect(try ClassifyRules.parse(mode: .topics, source: "Unsure：随便").rules.map(\.title) == ["Unsure"])
+	try inEnglish {
+		// 英文界面给英文的类别：读得通（名称、判断标准不超长），全是英文，分数跟中文的分开记。
+		let english = try ClassifyRules.parse(mode: .topics, source: ClassifyRules.defaultTopics)
+		let englishImage = try ClassifyRules.parse(mode: .topics, source: ClassifyRules.defaultImageTopics, input: .image)
+		#expect(english.rules.map(\.title) == ["Tech", "Work", "Orders & Receipts", "Life Tips", "Learning", "Contracts"])
+		#expect(englishImage.rules.map(\.title) == ["People", "Animals", "Food", "Nature", "Buildings", "Documents", "Screenshots", "Objects"])
+		for rule in english.rules + englishImage.rules {
+			let ascii = (rule.title + rule.criteria).allSatisfy(\.isASCII)
+			#expect(ascii, "\(rule.title): \(rule.criteria)")
+		}
+		#expect(english.fingerprint != text.fingerprint && englishImage.fingerprint != image.fingerprint)
+		// 固定标签在英文界面上显示成 Unsure 这些，类别也不能叫这些；中文的照样不能叫。
+		for name in ["Unsure", "Matches", "Doesn’t Match", "待确认"] {
+			#expect(throws: ClassifyRules.Problem.self, "\(name)") { try ClassifyRules.parse(mode: .topics, source: "\(name): anything") }
+		}
+	}
+}
+
 /// 测试里画一张手机截屏：顶上一条色块，下面几个聊天气泡。
 func phoneScreenshot() -> CGImage {
 	let ctx = Fixtures.canvas(1170, 2532)
