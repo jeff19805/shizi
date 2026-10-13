@@ -4,6 +4,7 @@
 #   ./scripts/build-app.sh --sign     用 Developer ID 签名，不公证：本机先试正式的签名。
 #   ./scripts/build-app.sh --release  Developer ID 签名 → 公证（App 会传给苹果）→ 钉上票据 → 打 zip、dmg → 逐项校验。
 #                                     产物在 .build/app/release/。要先提交：App 的版本号得跟提交对得上。
+#                                     发到 GitHub 的 Releases 页用 scripts/publish-release.sh。
 # --sign、--release 用谁的身份签名因人而异，不写进仓库：设环境变量，或者写进本机的 scripts/app/signing.env（不进仓库），脚本会读它。
 #   SHIZI_MAC_IDENTITY        必填，「Developer ID Application: 名字 (十位团队号)」
 #   SHIZI_MAC_KEYCHAIN        证书所在的钥匙串，默认是登录钥匙串
@@ -21,9 +22,13 @@ local | --sign | --release) ;;
 	exit 2
 	;;
 esac
-if [ "$MODE" = "--release" ] && [ -n "$(git status --porcelain -- Sources Package.swift scripts VERSION)" ]; then
-	echo "有没提交的改动：先提交再出正式版（App 的版本号要跟提交对得上）。" >&2
-	exit 1
+if [ "$MODE" = "--release" ]; then
+	if [ -n "$(git status --porcelain -- Sources Package.swift scripts VERSION)" ]; then
+		echo "有没提交的改动：先提交再出正式版（App 的版本号要跟提交对得上）。" >&2
+		exit 1
+	fi
+	# 只有出正式版要 git：从发布页下的源码包里没有 .git，本机自签照样能编。
+	COMMIT=$(git rev-parse HEAD)
 fi
 # 签名的设置先查齐，免得编了一分钟才发现没设。
 if [ "$MODE" != "local" ]; then
@@ -147,6 +152,13 @@ MOUNT=$(mktemp -d)
 hdiutil attach -nobrowse -readonly -mountpoint "$MOUNT" "$OUT/$NAME.dmg" > /dev/null
 check "$MOUNT/Shizi.app" yes
 hdiutil detach "$MOUNT" > /dev/null
+# 编、公证的这几分钟里别的会话可能提交或改了代码：那包里是哪一版就说不清了，不能拿去发。
+# 对得上就记下提交号，publish-release.sh 照它把标签打在编包的提交上。
+if [ "$(git rev-parse HEAD)" != "$COMMIT" ] || [ -n "$(git status --porcelain -- Sources Package.swift scripts VERSION)" ]; then
+	echo "编的时候代码变了（有了新提交或没提交的改动），包对不上提交 $COMMIT，别发：等代码停下来再重出。" >&2
+	exit 1
+fi
+printf '%s\n' "$COMMIT" > "$OUT/提交.txt"
 echo "$OUT/$NAME.zip"
 echo "$OUT/$NAME.dmg"
 echo "（$VERSION，Developer ID 签名，公证过，票据钉好了）"

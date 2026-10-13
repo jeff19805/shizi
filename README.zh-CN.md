@@ -20,15 +20,23 @@
 
 ## 安装
 
-运行要 macOS 14 或更新（表格、多栏、竖排要 macOS 26）。现在只能从源码编，要 Xcode 26 或同版本的命令行工具。
+运行要 macOS 14 或更新（表格、多栏、竖排要 macOS 26）。
 
-编 App：
+### 下载
+
+到 [Releases 页](https://github.com/jeff19805/shizi/releases/latest) 下载最新的 `.dmg`，打开后把拾字拖进「应用程序」。
+App 用 Developer ID 签名、经苹果公证，支持 Apple 芯片的 Mac；Intel 的 Mac 请从源码编。App 里带着 MCP 服务
+（`/Applications/Shizi.app/Contents/MacOS/shizi-mcp`）和判定插件。以后升级，照片权限不用重新给。
+
+### 从源码编
+
+要 Xcode 26 或同版本的命令行工具。编 App：
 
 ```bash
 ./scripts/build-app.sh   # 编出 .build/app/Shizi.app，本机自签，拖进「应用程序」就能用
 ```
 
-App 里带着 MCP 服务和判定插件。本机自签的 App 每重编一次，系统都当成新程序，照片权限要重新给。
+本机自签的 App 每重编一次，系统都当成新程序，照片权限要重新给。
 
 只要 MCP 服务和命令行：
 
@@ -139,6 +147,7 @@ MCP 服务每次调用前看一眼它改没改过，改了不用重启。
 ```
 
 `./scripts/build-app.sh --sign`、`--release` 用你自己的 Developer ID 签名、公证，怎么设见脚本开头。
+`./scripts/publish-release.sh` 把 `--release` 打好的包发到 GitHub 的 Releases 页。
 验收脚本 `bench/bench.mjs` 要用作者本机的一组测试图，测试图不在这个仓库里。
 
 ## 许可证

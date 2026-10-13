@@ -29,17 +29,24 @@ The name means "picking up characters" in Chinese. Versions 0.0.35 and earlier w
 
 ## Install
 
-Shizi runs on macOS 14 or later; tables, columns, and vertical text need macOS 26. For now it is built from source, which needs
-Xcode 26 or the matching Command Line Tools.
+Shizi runs on macOS 14 or later; tables, columns, and vertical text need macOS 26.
 
-Build the app:
+### Download
+
+Download the `.dmg` from the [latest release](https://github.com/jeff19805/shizi/releases/latest), open it, and drag Shizi to
+Applications. It is signed with a Developer ID and notarized by Apple, and it runs on Macs with Apple silicon; on an Intel Mac,
+build it from source. The app includes the MCP server, `/Applications/Shizi.app/Contents/MacOS/shizi-mcp`, and the judgment
+plugin. When you update, Photos access stays granted.
+
+### Build from source
+
+Building needs Xcode 26 or the matching Command Line Tools. Build the app:
 
 ```bash
 ./scripts/build-app.sh   # builds .build/app/Shizi.app, ad-hoc signed; drag it to Applications
 ```
 
-The app includes the MCP server and the judgment plugin. An ad-hoc signed app counts as a new app after every rebuild, so you
-need to grant Photos access again each time.
+An ad-hoc signed app counts as a new app after every rebuild, so you need to grant Photos access again each time.
 
 Build just the MCP server and the command line:
 
@@ -169,8 +176,8 @@ in [docs/design-spec.md](docs/design-spec.md), all in Chinese.
 ```
 
 `./scripts/build-app.sh --sign` and `--release` sign and notarize with your own Developer ID; the top of the script explains
-how to set it up. The benchmark script `bench/bench.mjs` uses a set of test images on the author's machine that isn't in this
-repository.
+how to set it up. `./scripts/publish-release.sh` publishes what `--release` packaged to GitHub Releases. The benchmark script
+`bench/bench.mjs` uses a set of test images on the author's machine that isn't in this repository.
 
 ## License
 

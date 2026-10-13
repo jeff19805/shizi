@@ -17,7 +17,7 @@
 | `Sources/shizi-snapshots` | 开发用：把拾字的界面画成图片（浅色、深色各一张），评审界面用，不进 App |
 | `Tests/OCRTests` | 单元测试和端到端测试；测试图都在测试里现画，不存图片文件 |
 | `bench/bench.mjs` | 用研究目录里的测试图验收 |
-| `scripts/` | `test.sh` 跑测试、`setup-hooks.sh` 装提交钩子、`test-hooks.sh` 测提交钩子、`build-app.sh` 编拾字 App（默认本机自签；`--sign` Developer ID 签名；`--release` 再公证、打包，会把 App 传给苹果，跑之前先问用户；签名身份写在本机的 `app/signing.env`，不进仓库；`app/` 里是 Info.plist 和画图标的脚本） |
+| `scripts/` | `test.sh` 跑测试、`setup-hooks.sh` 装提交钩子、`test-hooks.sh` 测提交钩子、`build-app.sh` 编拾字 App（默认本机自签；`--sign` Developer ID 签名；`--release` 再公证、打包，会把 App 传给苹果，跑之前先问用户；签名身份写在本机的 `app/signing.env`，不进仓库；`app/` 里是 Info.plist 和画图标的脚本）、`publish-release.sh` 把 `--release` 打好的包发到 GitHub 的 Releases 页（发出去谁都能下载，跑之前先问用户；`--draft` 只存草稿，`--notes` 只看说明） |
 | `.githooks/pre-commit` | 提交钩子：检查 CHANGELOG、版本号 +1 |
 | `docs/design-spec.md` | 拾字的界面规范：改界面先看它 |
 | `docs/how-it-works.md`、`docs/plugins.md` | 自动模式怎么认、判定插件的约定（英文；中文版是同名的 .zh-CN.md）：改了识别流程、插件约定要跟着改 |
