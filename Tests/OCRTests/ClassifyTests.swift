@@ -121,34 +121,59 @@ func classifyAnswers(_ r: FakeSystemOne.Request) -> (Int, Any) {
 	#expect(index.scores(rules: "规矩甲").keys.sorted() == ["二"] && index.scores(rules: "规矩乙").isEmpty)
 }
 
-/// 要连真的判定服务，平时不跑：SHIZI_CLASSIFY_LIVE=<配置里插件的名字> ./scripts/test.sh --filter 真的判定服务
-/// 只发几段合成的字（发票、会议通知、代码报错、合同条款），不碰照片。用这次编的插件程序（配置里指的那份可能还没有分类口子）。
-@Test(.enabled(if: ProcessInfo.processInfo.environment["SHIZI_CLASSIFY_LIVE"] != nil))
-func 按字分在真的判定服务上() throws {
+/// 连真服务的测试用的插件：配置里名字是 SHIZI_CLASSIFY_LIVE 的那个，只开分类，换成这次编的插件程序（配置里指的那份可能还没有分类口子）。
+func livePlugin() throws -> (PluginHost, PluginConfig) {
 	let name = ProcessInfo.processInfo.environment["SHIZI_CLASSIFY_LIVE"] ?? ""
 	var p = try #require(OCRConfig.load(path: OCRConfig.defaultPath()).config.plugins?.first { $0.name == name }, "配置里没有叫 \(name) 的插件")
 	p.hooks = ["classify"]
 	p.command = [systemOnePlugin]
-	let host = PluginHost(config: OCRConfig(plugins: [p]))
-	let rules = try ClassifyRules.parse(mode: .topics, source: ClassifyRules.defaultTopics)
-	let samples = [
-		("订单票据", "增值税电子普通发票\n购买方：某某科技有限公司\n价税合计 ¥1,280.00\n开票日期 2026年10月8日"),
-		("工作事务", "会议通知：明天上午 10 点在 3 楼会议室开项目周会，请各组带上本周进度和下周计划。"),
-		("技术资料", "let server = HTTPServer(port: 8080)\ntry server.start()\n报错：Address already in use。端口被占用时换一个端口，或者先停掉占用它的进程。"),
-		("合同约定", "甲方应于本合同签订之日起 30 日内向乙方支付首期款，逾期每日按未付金额的千分之一支付违约金。"),
-	]
-	for (expected, text) in samples {
-		let started = Date()
-		let scores = try Classifier.classify(text: text, rules: rules, host: host, plugin: p).get()
-		let named = rules.rules.map { "\($0.title) \(String(format: "%.2f", scores[$0.id] ?? -1))" }.joined(separator: "、")
-		print("【\(expected)】\(String(format: "%.1f", Date().timeIntervalSince(started))) 秒：\(named)")
-		#expect(rules.labels(scores).contains(expected), "\(expected)：\(named)")
+	return (PluginHost(config: OCRConfig(plugins: [p])), p)
+}
+
+/// 连真服务的测试用哪种语言：SHIZI_CLASSIFY_ENGLISH=1 就在英文下跑（默认类别是英文的，插件也说英文；
+/// 插件发给服务的说明是固定的中文，量的就是这样配着分得准不准），别的值、不设都用中文。
+func inLiveLanguage<T>(_ body: (_ english: Bool) throws -> T) rethrows -> T {
+	guard ProcessInfo.processInfo.environment["SHIZI_CLASSIFY_ENGLISH"] == "1" else { return try body(false) }
+	return try inEnglish { try body(true) }
+}
+
+/// 要连真的判定服务，平时不跑：SHIZI_CLASSIFY_LIVE=<配置里插件的名字> ./scripts/test.sh --filter 真的判定服务
+/// 只发几段编的字（发票、会议通知、代码报错、合同条款），不碰照片。再加 SHIZI_CLASSIFY_ENGLISH=1 用英文的默认类别、英文的字。
+@Test(.enabled(if: ProcessInfo.processInfo.environment["SHIZI_CLASSIFY_LIVE"] != nil))
+func 按字分在真的判定服务上() throws {
+	let (host, p) = try livePlugin()
+	try inLiveLanguage { english in
+		let rules = try ClassifyRules.parse(mode: .topics, source: ClassifyRules.defaultTopics)
+		// 每段该分到默认类别里的第几类（技术资料、工作事务、订单票据、生活攻略、学习知识、合同约定）：中文、英文的类别名不一样，按序号对。
+		let samples: [(Int, String)] =
+			english
+			? [
+				(2, "INVOICE\nBill to: Acme Tech Inc.\nTotal (tax included): $1,280.00\nInvoice date: Oct 8, 2026"),
+				(1, "Meeting notice: the weekly project meeting is tomorrow at 10 a.m. in the 3rd-floor conference room. Each team, please bring this week's progress and next week's plan."),
+				(0, "let server = HTTPServer(port: 8080)\ntry server.start()\nError: Address already in use. If the port is taken, use another port or stop the process that is using it."),
+				(5, "Party A shall pay Party B the first installment within 30 days of signing this contract. Late payment accrues a penalty of 0.1% of the unpaid amount per day."),
+			]
+			: [
+				(2, "增值税电子普通发票\n购买方：某某科技有限公司\n价税合计 ¥1,280.00\n开票日期 2026年10月8日"),
+				(1, "会议通知：明天上午 10 点在 3 楼会议室开项目周会，请各组带上本周进度和下周计划。"),
+				(0, "let server = HTTPServer(port: 8080)\ntry server.start()\n报错：Address already in use。端口被占用时换一个端口，或者先停掉占用它的进程。"),
+				(5, "甲方应于本合同签订之日起 30 日内向乙方支付首期款，逾期每日按未付金额的千分之一支付违约金。"),
+			]
+		for (index, text) in samples {
+			let expected = rules.rules[index].title
+			let started = Date()
+			let scores = try Classifier.classify(text: text, rules: rules, host: host, plugin: p).get()
+			let named = rules.rules.map { "\($0.title) \(String(format: "%.2f", scores[$0.id] ?? -1))" }.joined(separator: "、")
+			print("【\(expected)】\(String(format: "%.1f", Date().timeIntervalSince(started))) 秒：\(named)")
+			#expect(rules.labels(scores).contains(expected), "\(expected)：\(named)")
+		}
+		// 一句条件：合同那段符合，会议通知不符合。
+		let condition = try ClassifyRules.parse(mode: .condition, source: english ? "Mentions a payment deadline" : "包含付款期限的约定")
+		let yes = try Classifier.classify(text: samples[3].1, rules: condition, host: host, plugin: p).get()
+		let no = try Classifier.classify(text: samples[1].1, rules: condition, host: host, plugin: p).get()
+		print("【条件】合同 \(yes)，会议通知 \(no)")
+		#expect(condition.labels(yes) == [ClassifyRules.matched] && condition.labels(no) == [ClassifyRules.unmatched])
 	}
-	let condition = try ClassifyRules.parse(mode: .condition, source: "包含付款期限的约定")
-	let yes = try Classifier.classify(text: samples[3].1, rules: condition, host: host, plugin: p).get()
-	let no = try Classifier.classify(text: samples[1].1, rules: condition, host: host, plugin: p).get()
-	print("【条件】合同 \(yes)，会议通知 \(no)")
-	#expect(condition.labels(yes) == ["符合条件"] && condition.labels(no) == ["不符合条件"])
 }
 
 @Test func 按画面分一张走一遍插件() throws {
@@ -234,47 +259,48 @@ func receiptPhoto() -> CGImage {
 /// 要连真的判定服务，平时不跑：SHIZI_CLASSIFY_LIVE=<插件名字> ./scripts/test.sh --filter 按画面分在真的判定服务上
 /// 量「本机约 360 像素的缩略图够不够」：系统自带的照片（512 像素，账户头像那批）比 360 和 512；
 /// 系统壁纸 Sonoma（大风景照）和测试里画的截屏、小票比 360 和 1024。不碰你的照片。
+/// 再加 SHIZI_CLASSIFY_ENGLISH=1 用英文的默认类别量：图还是这几张，好跟中文的比。
 @Test(.enabled(if: ProcessInfo.processInfo.environment["SHIZI_CLASSIFY_LIVE"] != nil))
 func 按画面分在真的判定服务上() throws {
-	let name = ProcessInfo.processInfo.environment["SHIZI_CLASSIFY_LIVE"] ?? ""
-	var p = try #require(OCRConfig.load(path: OCRConfig.defaultPath()).config.plugins?.first { $0.name == name }, "配置里没有叫 \(name) 的插件")
-	p.hooks = ["classify"]
-	p.command = [systemOnePlugin]
-	let host = PluginHost(config: OCRConfig(plugins: [p]))
-	let rules = try ClassifyRules.parse(mode: .topics, source: ClassifyRules.defaultImageTopics, input: .image)
+	let (host, p) = try livePlugin()
 	func load(_ path: String) -> CGImage? {
 		CGImageSourceCreateWithURL(URL(fileURLWithPath: path) as CFURL, nil).flatMap { CGImageSourceCreateImageAtIndex($0, 0, nil) }
 	}
 	let pictures = "/Library/User Pictures/"
-	let samples: [(String, String, CGImage?, [Int])] = [
-		("动物", "斑马", load(pictures + "Animals/Zebra.heic"), [360, 512]),
-		("动物", "企鹅", load(pictures + "Animals/Penguin.heic"), [360, 512]),
-		("动物", "猫头鹰", load(pictures + "Animals/Owl.heic"), [360, 512]),
-		("美食", "幸运饼干", load(pictures + "Fun/Fortune Cookie.heic"), [360, 512]),
-		("美食", "姜饼人", load(pictures + "Fun/Gingerbread Man.heic"), [360, 512]),
-		("物品", "吉他", load(pictures + "Instruments/Guitar.heic"), [360, 512]),
-		("物品", "钢琴", load(pictures + "Instruments/Piano.heic"), [360, 512]),
-		("自然风景", "向日葵", load(pictures + "Flowers/Sunflower.heic"), [360, 512]),
-		("自然风景", "Sonoma 风景", load("/System/Library/Desktop Pictures/Sonoma.heic"), [360, 1024]),
-		("屏幕截图", "聊天截屏（画的）", phoneScreenshot(), [360, 1024]),
-		("文档票据", "小票（画的）", receiptPhoto(), [360, 1024]),
+	// 每张该分到默认类别里的第几类（人物、动物、美食、自然风景、建筑街景、文档票据、屏幕截图、物品）。
+	let samples: [(Int, String, CGImage?, [Int])] = [
+		(1, "斑马", load(pictures + "Animals/Zebra.heic"), [360, 512]),
+		(1, "企鹅", load(pictures + "Animals/Penguin.heic"), [360, 512]),
+		(1, "猫头鹰", load(pictures + "Animals/Owl.heic"), [360, 512]),
+		(2, "幸运饼干", load(pictures + "Fun/Fortune Cookie.heic"), [360, 512]),
+		(2, "姜饼人", load(pictures + "Fun/Gingerbread Man.heic"), [360, 512]),
+		(7, "吉他", load(pictures + "Instruments/Guitar.heic"), [360, 512]),
+		(7, "钢琴", load(pictures + "Instruments/Piano.heic"), [360, 512]),
+		(3, "向日葵", load(pictures + "Flowers/Sunflower.heic"), [360, 512]),
+		(3, "Sonoma 风景", load("/System/Library/Desktop Pictures/Sonoma.heic"), [360, 1024]),
+		(6, "聊天截屏（画的）", phoneScreenshot(), [360, 1024]),
+		(5, "小票（画的）", receiptPhoto(), [360, 1024]),
 	]
-	var hits: [Int: Int] = [:], total = 0
-	for (expected, label, image, sizes) in samples {
-		guard let image else {
-			print("【\(label)】这台 Mac 上没有这张图，跳过")
-			continue
+	try inLiveLanguage { _ in
+		let rules = try ClassifyRules.parse(mode: .topics, source: ClassifyRules.defaultImageTopics, input: .image)
+		var hits: [Int: Int] = [:], total = 0
+		for (index, label, image, sizes) in samples {
+			guard let image else {
+				print("【\(label)】这台 Mac 上没有这张图，跳过")
+				continue
+			}
+			total += 1
+			let expected = rules.rules[index]
+			for size in sizes {
+				let started = Date()
+				let scores = try Classifier.classify(image: image, longSide: size, rules: rules, host: host, plugin: p).get()
+				let labels = rules.labels(scores)
+				let mine = scores[expected.id] ?? 0
+				let others = rules.rules.filter { $0.id != expected.id && (scores[$0.id] ?? 0) >= 0.5 }.map { "\($0.title) \(String(format: "%.2f", scores[$0.id] ?? 0))" }
+				if labels.contains(expected.title) { hits[size == 360 ? 360 : 0, default: 0] += 1 }
+				print("【\(label)】\(size) 像素 \(String(format: "%.1f", Date().timeIntervalSince(started))) 秒：\(expected.title) \(String(format: "%.2f", mine))，分到 \(labels.joined(separator: "、"))\(others.isEmpty ? "" : "（过半的还有 \(others.joined(separator: "、"))）")")
+			}
 		}
-		total += 1
-		for size in sizes {
-			let started = Date()
-			let scores = try Classifier.classify(image: image, longSide: size, rules: rules, host: host, plugin: p).get()
-			let labels = rules.labels(scores)
-			let mine = rules.rules.first { $0.title == expected }.map { scores[$0.id] ?? 0 } ?? 0
-			let others = rules.rules.filter { $0.title != expected && (scores[$0.id] ?? 0) >= 0.5 }.map { "\($0.title) \(String(format: "%.2f", scores[$0.id] ?? 0))" }
-			if labels.contains(expected) { hits[size == 360 ? 360 : 0, default: 0] += 1 }
-			print("【\(label)】\(size) 像素 \(String(format: "%.1f", Date().timeIntervalSince(started))) 秒：\(expected) \(String(format: "%.2f", mine))，分到 \(labels.joined(separator: "、"))\(others.isEmpty ? "" : "（过半的还有 \(others.joined(separator: "、"))）")")
-		}
+		print("【合计】\(total) 张：360 像素分对 \(hits[360] ?? 0) 张，大的那档分对 \(hits[0] ?? 0) 张")
 	}
-	print("【合计】\(total) 张：360 像素分对 \(hits[360] ?? 0) 张，大的那档分对 \(hits[0] ?? 0) 张")
 }
