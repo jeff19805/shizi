@@ -17,7 +17,7 @@
 | `Sources/shizi-snapshots` | 开发用：把拾字的界面画成图片（浅色、深色各一张），评审界面用，不进 App |
 | `Tests/OCRTests` | 单元测试和端到端测试；测试图都在测试里现画，不存图片文件 |
 | `bench/bench.mjs` | 用研究目录里的测试图验收 |
-| `scripts/` | `test.sh` 跑测试、`setup-hooks.sh` 装提交钩子、`test-hooks.sh` 测提交钩子、`build-app.sh` 编拾字 App（默认本机自签；`--sign` Developer ID 签名；`--release` 再公证、打包，会把 App 传给苹果，跑之前先问用户；签名身份写在本机的 `app/signing.env`，不进仓库；`app/` 里是 Info.plist 和画图标的脚本）、`publish-release.sh` 把 `--release` 打好的包发到 GitHub 的 Releases 页（发出去谁都能下载，跑之前先问用户；`--draft` 只存草稿，`--notes` 只看说明） |
+| `scripts/` | `test.sh` 跑测试、`setup-hooks.sh` 装提交钩子、`test-hooks.sh` 测提交钩子、`build-app.sh` 编拾字 App（默认本机自签；`--sign` Developer ID 签名；`--release` 再公证、打包，编成通用二进制（Apple 芯片、Intel 都能跑），会把 App 传给苹果，跑之前先问用户；签名身份写在本机的 `app/signing.env`，不进仓库；`app/` 里是 Info.plist 和画图标的脚本）、`publish-release.sh` 把 `--release` 打好的包发到 GitHub 的 Releases 页（发出去谁都能下载，跑之前先问用户；`--draft` 只存草稿，`--notes` 只看说明） |
 | `.githooks/pre-commit` | 提交钩子：检查 CHANGELOG、版本号 +1 |
 | `docs/design-spec.md` | 拾字的界面规范：改界面先看它 |
 | `docs/how-it-works.md`、`docs/plugins.md` | 自动模式怎么认、判定插件的约定（英文；中文版是同名的 .zh-CN.md）：改了识别流程、插件约定要跟着改 |
@@ -67,6 +67,10 @@
     在仓库根目录用 `open -a "$PWD/.build/app/Shizi.app"` 启动（`open -a` 只认绝对路径，给 `.build/…` 这种相对路径会说找不到 App；
     在终端里直接跑里面的可执行文件，授权会算到终端头上）。
     自检：`open -a "$PWD/.build/app/Shizi.app" --args --photos-check 报告.json`，报告别放桌面、文稿、下载（这几个文件夹要另外授权）。
+  - Intel 版（x86_64）在 Apple 芯片上就能编（`swift build -c release --arch x86_64`），编出的程序系统自动交给 Rosetta 跑。
+    单元测试别用 `swift test --arch x86_64`：测试包编得出来，但跑测试的助手按本机芯片起，载不进 x86_64 的测试包。
+    要整个工具链在 Rosetta 下跑：`arch -x86_64 ./scripts/test.sh`。它占着 `.build` 的锁，放在 `git archive HEAD` 导出的拷贝里跑。
+    Rosetta 下跑通不等于真的 Intel Mac 上也行：硬件不一样（Intel 的 Mac 没有神经网络引擎），没有真机就在提交说明里写明。
   - PhotoKit 取图的回调在主线程上来：识别队列上等它可以，主线程不能反过来等识别队列。
   - SwiftUI 重建列表、网格时，新格子的 onAppear 常常先于旧格子的 onDisappear（同一个编号）。靠这两个记「哪些格子露着」的，
     按个数记，别按有没有记：不然旧格子一收，新格子的东西也跟着放掉了（拾字的照片网格撞上过：刚打开拾字点相簿一片空白）。

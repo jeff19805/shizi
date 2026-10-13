@@ -25,7 +25,7 @@
 ### 下载
 
 到 [Releases 页](https://github.com/jeff19805/shizi/releases/latest) 下载最新的 `.dmg`，打开后把拾字拖进「应用程序」。
-App 用 Developer ID 签名、经苹果公证，支持 Apple 芯片的 Mac；Intel 的 Mac 请从源码编。App 里带着 MCP 服务
+App 用 Developer ID 签名、经苹果公证，Apple 芯片和 Intel 的 Mac 都能用。App 里带着 MCP 服务
 （`/Applications/Shizi.app/Contents/MacOS/shizi-mcp`）和判定插件。以后升级，照片权限不用重新给。
 
 ### 从源码编

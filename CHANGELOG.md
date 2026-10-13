@@ -4,6 +4,10 @@
 
 ## [未发布]
 
+## [0.0.48] - 2026-10-13
+
+- 下载的拾字改成通用版，Intel 的 Mac 也能用了（照样要 macOS 14 或更新，表格、多栏、竖排要 macOS 26）。下载的文件名从 Shizi-版本号-mac-arm64 改成 Shizi-版本号-mac-universal，文件差不多大了一倍。Intel 版是在 Apple 芯片的 Mac 上用 Rosetta 试的，还没在真的 Intel Mac 上跑过。
+
 ## [0.0.47] - 2026-10-13
 
 - 下载的 dmg 打开后，卷名叫 Shizi，拖放用的快捷方式叫 Applications（以前是中文的「拾字」「应用程序」，英文系统上看着别扭）。照样把拾字拖到 Applications 上就装好了。

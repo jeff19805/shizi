@@ -34,9 +34,9 @@ Shizi runs on macOS 14 or later; tables, columns, and vertical text need macOS 2
 ### Download
 
 Download the `.dmg` from the [latest release](https://github.com/jeff19805/shizi/releases/latest), open it, and drag Shizi to
-Applications. It is signed with a Developer ID and notarized by Apple, and it runs on Macs with Apple silicon; on an Intel Mac,
-build it from source. The app includes the MCP server, `/Applications/Shizi.app/Contents/MacOS/shizi-mcp`, and the judgment
-plugin. When you update, Photos access stays granted.
+Applications. It is signed with a Developer ID and notarized by Apple, and it runs on both Apple silicon and Intel Macs. The app
+includes the MCP server, `/Applications/Shizi.app/Contents/MacOS/shizi-mcp`, and the judgment plugin. When you update, Photos
+access stays granted.
 
 ### Build from source
 

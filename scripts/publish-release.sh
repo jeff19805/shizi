@@ -35,7 +35,7 @@ fi
 # 版本号、更新记录都从这个提交里取，不读工作区：工作区里可能有别的会话还没提交的改动。
 VERSION=$(git show "$COMMIT:VERSION" | tr -d ' \n')
 TAG=v$VERSION
-NAME=Shizi-$VERSION-mac-arm64
+NAME=Shizi-$VERSION-mac-universal
 REPO=$(git remote get-url origin | sed -E 's#^(https://github\.com/|git@github\.com:)##; s#\.git$##')
 [ "$COMMIT" = "$(git rev-parse HEAD)" ] || echo "（发的是编包的提交 $(git rev-parse --short "$COMMIT")，$TAG；HEAD 已经往后走了）" >&2
 
@@ -58,9 +58,9 @@ trap 'rm -f "$NOTES"' EXIT
 {
 	# 一段写成一行：发布说明里的换行在 GitHub 上会照样断开，折行会把句子断在半截。
 	cat << EOF
-**Install**: download \`$NAME.dmg\`, open it, and drag Shizi to Applications. It is signed with a Developer ID and notarized by Apple. It needs a Mac with Apple silicon and macOS 14 or later; tables, columns, and vertical text need macOS 26. On an Intel Mac, build Shizi from source (see the README). The \`.zip\` holds the same app. The MCP server is inside the app: \`/Applications/Shizi.app/Contents/MacOS/shizi-mcp\`.
+**Install**: download \`$NAME.dmg\`, open it, and drag Shizi to Applications. It is signed with a Developer ID and notarized by Apple. It runs on Macs with Apple silicon or Intel processors and macOS 14 or later; tables, columns, and vertical text need macOS 26. The \`.zip\` holds the same app. The MCP server is inside the app: \`/Applications/Shizi.app/Contents/MacOS/shizi-mcp\`.
 
-**安装**：下载 \`$NAME.dmg\`，打开后把拾字拖进「应用程序」。用 Developer ID 签名、经苹果公证。要 Apple 芯片的 Mac、macOS 14 或更新（表格、多栏、竖排要 macOS 26）；Intel 的 Mac 请从源码编（见 README）。\`.zip\` 里是同一个 App。MCP 服务在 App 里：\`/Applications/Shizi.app/Contents/MacOS/shizi-mcp\`。
+**安装**：下载 \`$NAME.dmg\`，打开后把拾字拖进「应用程序」。用 Developer ID 签名、经苹果公证。Apple 芯片和 Intel 的 Mac 都能用，要 macOS 14 或更新（表格、多栏、竖排要 macOS 26）。\`.zip\` 里是同一个 App。MCP 服务在 App 里：\`/Applications/Shizi.app/Contents/MacOS/shizi-mcp\`。
 EOF
 	[ -z "$CHANGES" ] || printf '\n## What’s changed / 改了什么\n\n%s\n' "$CHANGES"
 	printf '\nFull change log (in Chinese) / 全部改动：[CHANGELOG.md](https://github.com/%s/blob/%s/CHANGELOG.md)\n' "$REPO" "$TAG"

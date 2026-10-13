@@ -5,6 +5,8 @@
 #   ./scripts/build-app.sh --release  Developer ID 签名 → 公证（App 会传给苹果）→ 钉上票据 → 打 zip、dmg → 逐项校验。
 #                                     产物在 .build/app/release/。要先提交：App 的版本号得跟提交对得上。
 #                                     发到 GitHub 的 Releases 页用 scripts/publish-release.sh。
+# --release 编成通用二进制，Apple 芯片和 Intel 的 Mac 都能跑；另外两种只编这台 Mac 的芯片，省一半时间。
+# 不公证先试通用版：SHIZI_ARCHS="arm64 x86_64" ./scripts/build-app.sh --sign。
 # --sign、--release 用谁的身份签名因人而异，不写进仓库：设环境变量，或者写进本机的 scripts/app/signing.env（不进仓库），脚本会读它。
 #   SHIZI_MAC_IDENTITY        必填，「Developer ID Application: 名字 (十位团队号)」
 #   SHIZI_MAC_KEYCHAIN        证书所在的钥匙串，默认是登录钥匙串
@@ -43,14 +45,22 @@ if [ "$MODE" != "local" ]; then
 	[ "$MODE" != "--release" ] || [ -n "$PROFILE" ] || { echo "要公证得先设 SHIZI_MAC_NOTARY_PROFILE（见脚本开头）。" >&2; exit 1; }
 fi
 VERSION=$(tr -d ' \n' < VERSION)
-swift build -c release --product Shizi
-swift build -c release --product shizi-mcp
-swift build -c release --product ocr-plugin-systemone
-BIN=$(swift build -c release --show-bin-path)
+# 每种芯片各编一遍，再用 lipo 合成一个文件（通用二进制）。只编一种时直接拷：lipo 会给单个文件也包一层，没必要。
+ARCHS=${SHIZI_ARCHS:-$(uname -m)}
+[ "$MODE" != "--release" ] || ARCHS="arm64 x86_64"
+for arch in $ARCHS; do
+	for p in Shizi shizi-mcp ocr-plugin-systemone; do
+		swift build -c release --arch "$arch" --product "$p"
+	done
+done
 APP=.build/app/Shizi.app
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-cp "$BIN/Shizi" "$BIN/shizi-mcp" "$BIN/ocr-plugin-systemone" "$APP/Contents/MacOS/"
+for p in Shizi shizi-mcp ocr-plugin-systemone; do
+	set --
+	for arch in $ARCHS; do set -- "$@" "$(swift build -c release --arch "$arch" --show-bin-path)/$p"; done
+	if [ $# -eq 1 ]; then cp "$1" "$APP/Contents/MacOS/"; else lipo -create "$@" -output "$APP/Contents/MacOS/$p"; fi
+done
 sed "s/__VERSION__/$VERSION/g" scripts/app/Info.plist > "$APP/Contents/Info.plist"
 # 界面的语言包：英文对照表（en.lproj/Localizable.strings）、简体和繁体中文，还有各语言的 App 名、照片权限的说明。
 cp -R scripts/app/*.lproj "$APP/Contents/Resources/"
@@ -105,6 +115,10 @@ check() {
 	for f in shizi-mcp ocr-plugin-systemone; do
 		codesign -dvv "$app/Contents/MacOS/$f" 2>&1 | grep -F "TeamIdentifier=$TEAM" > /dev/null || { echo "$f 没用同一个身份签：$app" >&2; exit 1; }
 	done
+	# 编了哪几种芯片就都得在：正式版两种都要，只有一种的包在另一种 Mac 上打不开。
+	for f in Shizi shizi-mcp ocr-plugin-systemone; do
+		lipo "$app/Contents/MacOS/$f" -verify_arch $ARCHS || { echo "$f 没把 $ARCHS 都编进去：$app" >&2; exit 1; }
+	done
 	if [ "$notarized" = yes ]; then
 		xcrun stapler validate "$app" > /dev/null || { echo "没钉上公证票据：$app" >&2; exit 1; }
 		spctl --assess --type execute --verbose=2 "$app" 2>&1 | grep -F "source=Notarized Developer ID" > /dev/null ||
@@ -135,7 +149,7 @@ rm "$OUT/公证用.zip"
 xcrun stapler staple -v "$APP" > /dev/null
 check "$APP" yes
 
-NAME="Shizi-$VERSION-mac-arm64"
+NAME="Shizi-$VERSION-mac-universal"
 ditto -c -k --sequesterRsrc --keepParent "$APP" "$OUT/$NAME.zip"
 STAGE=$(mktemp -d)
 cp -R "$APP" "$STAGE/"
