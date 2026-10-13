@@ -85,6 +85,8 @@ public final class OCREngine {
 	public let configProblem: String?
 	/// 没指定语言时怎么认（配置文件里的；调用时 `OCROptions.languagePreference` 可以换）。
 	public let languagePreference: LanguagePreference
+	/// 认文档用的函数，nil 就用系统的（`recognizeDocument`）。测试里换成会出错的，看出错时退回逐行。
+	var documentRecognizer: ((CGImage, [String]?, Bool) throws -> DocResult)?
 
 	public init(config: OCRConfig = OCRConfig(), configPath: String? = nil, configProblem: String? = nil,
 		environment: [String: String] = ProcessInfo.processInfo.environment)
@@ -307,9 +309,10 @@ public final class OCREngine {
 		//    认出的字比逐行少，但版面是对的。
 		var document: DocResult?
 		var mode = OCRMode.lines
-		if wantDoc, #available(macOS 26.0, *) {
-			// 认文档跟逐行用同一套语言：中文优先定下来按中文认的页，认文档也按中文认。
-			var doc = try recognizeDocument(image, languages: lineOptions.languages, correction: options.correction)
+		// 认文档跟逐行用同一套语言：中文优先定下来按中文认的页，认文档也按中文认。
+		if wantDoc, #available(macOS 26.0, *),
+			var doc = documentOrNil(image, languages: lineOptions.languages, correction: options.correction, notes: &notes, steps: &steps)
+		{
 			if halfWidth { doc = doc.halfWidthPunctuation() }
 			let fused = fuse(doc, lines: lines, width: image.width, height: image.height)
 			let cover = bagRecall(of: lines.map(\.text).joined(), in: doc.lines.map(\.text).joined())
@@ -386,6 +389,19 @@ public final class OCREngine {
 			page: page, width: width, height: height, mode: mode, lines: ordered, text: text, cleanText: cleanText, document: document,
 			barcodes: barcodes, notes: notes, coordinateSpace: coordinateSpace, rectifiedImage: coordinateSpace == "rectified" ? image : nil,
 			steps: steps)
+	}
+
+	/// 认文档；出错时把原因记进说明和步骤，返回 nil，这一页照逐行的结果出。
+	/// 逐行的结果这时已经在手里，认文档出错（比如哪台 Mac 上系统的认文档用不了）不该让整页认不出来。
+	@available(macOS 26.0, *)
+	func documentOrNil(_ image: CGImage, languages: [String]?, correction: Bool, notes: inout [String], steps: inout [String: Any]) -> DocResult? {
+		do {
+			return try (documentRecognizer ?? recognizeDocument)(image, languages, correction)
+		} catch {
+			steps["documentError"] = error.localizedDescription
+			notes.append(Texts.text("认文档出错了（\(error.localizedDescription)），改用逐行结果；表格、分栏的结构没有保留"))
+			return nil
+		}
 	}
 
 	/// 系统可信度最低那档（0.3）的行算可疑：坏行几乎都落在这一档，但也会误报一些好行。

@@ -35,6 +35,8 @@ top left.
      The page is read by cells as in step 6 instead.
    - Document mode's minimum text height is set to 1/64 of the image height: with the system default of 1/32, scans seem to be
      shrunk before recognition, and parts of tables are lost.
+   - If document mode fails (for example, on a Mac where the system's document recognition isn't available), the line-by-line
+     result is used, and a note says what went wrong.
 6. When document mode's layout isn't used, the line-by-line result is split into blocks at large blank areas: sidebars, body text,
    and dialogs are separated, with a blank line between blocks. Left and right sides that line up row by row (tables,
    "label: value" forms) aren't split.

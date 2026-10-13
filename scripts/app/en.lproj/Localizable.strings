@@ -548,6 +548,7 @@
 "逐行认出的字只有 %lld%% 归进了认文档找到的版面，其余列在最后；可以用 mode=lines 对比" = "Only %lld%% of the text recognized line by line fit into the layout found by document mode; the rest is listed at the end. You can compare with mode=lines";
 "认文档没找到表格，页上却画着表格线：用的是逐行结果，按线围成的格子一排排读" = "Document mode found no table, but the page has ruled table lines, so the line-by-line result was used, read row by row through the cells formed by the lines";
 "认文档找到的版面只装得下逐行结果的 %lld%%，改用逐行结果；表格、分栏的结构没有保留" = "The layout found by document mode holds only %lld%% of the line-by-line result, so the line-by-line result was used instead; table and column structure isn’t preserved";
+"认文档出错了（%@），改用逐行结果；表格、分栏的结构没有保留" = "Document mode failed (%@), so the line-by-line result was used instead; table and column structure isn’t preserved";
 "〔中间〕〔左侧〕这类标记不是认出来的字，是它下面那段字的大致位置（相对整张图；指定了区域时相对那块区域）；分成几栏时才标" = "Markers like 〔middle〕 and 〔left〕 aren’t recognized text: each gives the rough position of the passage below it (relative to the whole image, or to the region when one is specified). They’re added only when the page is split into columns";
 "图里可能有沿圆圈或弧线排列的字（印章之类），这部分系统认不准；可以把那块裁出来单独处理" = "The image may have text laid out along a circle or arc (such as a seal), which the system can’t recognize reliably; you can crop that area and process it separately";
 "没认出字" = "No text recognized";

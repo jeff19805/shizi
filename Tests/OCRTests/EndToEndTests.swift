@@ -42,6 +42,33 @@ func ocr(_ image: CGImage, _ configure: (inout OCROptions) -> Void = { _ in }) t
 	#expect(Fixtures.compact(p.text).contains("疑是地上霜"))
 }
 
+@Test func 认文档出错时退回逐行() throws {
+	guard OCREngine.documentModeAvailable else { return }
+	// 系统的认文档出错（比如哪台 Mac 上用不了）时，照逐行的结果出、说清为什么，不能整页认不出来。
+	let failing = OCREngine(config: OCRConfig())
+	failing.documentRecognizer = { _, _, _ in
+		throw NSError(domain: "test", code: 1, userInfo: [NSLocalizedDescriptionKey: "document recognition unavailable"])
+	}
+	func run(_ image: CGImage, _ mode: OCRMode) throws -> PageResult {
+		var o = OCROptions()
+		o.mode = mode
+		return try failing.run(path: Fixtures.save(image), options: o).pages[0]
+	}
+	// 指定认文档：逐行认出的字照样出来。
+	let p = try run(Fixtures.text(["苹果自带的文字识别能做到哪一步", "Vision runs locally 2026"]), .document)
+	#expect(p.mode == .lines && p.document == nil)
+	#expect(Fixtures.compact(p.text).contains("苹果自带的文字识别能做到哪一步"))
+	#expect(p.notes.contains { $0.contains("认文档出错了（document recognition unavailable）") })
+	#expect(p.steps["documentError"] as? String == "document recognition unavailable")
+	// 自动模式下竖排（逐行一个字也认不出）也走认文档：出错了照样返回，不抛错。
+	let v = try run(Fixtures.vertical(["床前明月光", "疑是地上霜"]), .auto)
+	#expect(v.mode == .lines)
+	#expect(v.notes.contains { $0.contains("认文档出错了") })
+	// 英文下这句说明也是英文的。
+	let english = try inEnglish { try run(Fixtures.text(["Vision runs locally 2026"]), .document) }
+	#expect(english.notes.contains { $0.hasPrefix("Document mode failed") } && !english.notes.contains(where: hasHan))
+}
+
 @Test func 只认一块且坐标仍相对整图() throws {
 	let ctx = Fixtures.canvas(1200, 400)
 	Fixtures.draw(["左边这段不要"], size: 30, in: ctx, left: 40, top: 150)
