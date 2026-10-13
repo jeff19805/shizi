@@ -139,8 +139,9 @@ NAME="Shizi-$VERSION-mac-arm64"
 ditto -c -k --sequesterRsrc --keepParent "$APP" "$OUT/$NAME.zip"
 STAGE=$(mktemp -d)
 cp -R "$APP" "$STAGE/"
-ln -s /Applications "$STAGE/应用程序"
-hdiutil create -volname "拾字" -srcfolder "$STAGE" -ov -format UDZO "$OUT/$NAME.dmg" > /dev/null
+# dmg 的卷名、拖放用的快捷方式都用英文名：下载的人什么语言都有，中文系统上「应用程序」文件夹的本名也是 Applications。
+ln -s /Applications "$STAGE/Applications"
+hdiutil create -volname "Shizi" -srcfolder "$STAGE" -ov -format UDZO "$OUT/$NAME.dmg" > /dev/null
 rm -rf "$STAGE"
 
 # 从打好的包里拿出来再校验一遍：别人下载到的就是这个。
